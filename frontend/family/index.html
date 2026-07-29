@@ -1,0 +1,185 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>银龄放心单 - 家属端</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Microsoft YaHei", sans-serif; background: #F0F4F8; color: #333; min-height: 100vh; }
+  .header { background: #1565C0; color: #fff; padding: 20px; text-align: center; font-size: 26px; font-weight: bold; }
+  .container { max-width: 700px; margin: 0 auto; padding: 20px; }
+  .section { background: #fff; border-radius: 16px; padding: 24px; margin: 16px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .section h2 { font-size: 22px; color: #1565C0; margin-bottom: 16px; border-bottom: 2px solid #E3F2FD; padding-bottom: 8px; }
+  .form-row { margin: 12px 0; }
+  .form-row label { display: block; font-size: 16px; font-weight: bold; margin-bottom: 6px; color: #555; }
+  .form-row input, .form-row select {
+    width: 100%; padding: 12px; font-size: 18px; border: 2px solid #ddd;
+    border-radius: 10px; outline: none;
+  }
+  .form-row input:focus { border-color: #1565C0; }
+  .checkbox-row { display: flex; align-items: center; gap: 10px; margin: 12px 0; }
+  .checkbox-row input[type=checkbox] { width: 22px; height: 22px; }
+  .checkbox-row label { font-size: 18px; }
+  .btn {
+    display: block; width: 100%; padding: 14px; font-size: 20px; font-weight: bold;
+    border: none; border-radius: 12px; cursor: pointer; margin-top: 16px; color: #fff;
+  }
+  .btn-primary { background: #1565C0; }
+  .btn-primary:hover { background: #0D47A1; }
+  .btn-warn { background: #FF9800; }
+  .btn-warn:hover { background: #F57C00; }
+  .order-card {
+    border: 2px solid #E0E0E0; border-radius: 14px; padding: 18px; margin: 10px 0;
+    transition: all 0.2s;
+  }
+  .order-card:hover { border-color: #1565C0; }
+  .order-header { display: flex; justify-content: space-between; align-items: center; }
+  .order-id { font-size: 14px; color: #999; }
+  .order-meal { font-size: 20px; font-weight: bold; color: #333; }
+  .order-status-badge {
+    display: inline-block; padding: 4px 14px; border-radius: 20px;
+    font-size: 14px; font-weight: bold;
+  }
+  .badge-pending { background: #FFF3E0; color: #E65100; }
+  .badge-delivered { background: #E3F2FD; color: #1565C0; }
+  .badge-confirmed { background: #E8F5E9; color: #2E7D32; }
+  .badge-timeout { background: #FFEBEE; color: #C62828; }
+  .order-detail { font-size: 16px; color: #666; margin-top: 8px; }
+  .rule-result { margin-top: 8px; font-size: 14px; }
+  .rule-pass { color: #2E7D32; }
+  .rule-fail { color: #C62828; }
+  .alert-bar {
+    background: #FFF3E0; border: 2px solid #FF9800; border-radius: 12px;
+    padding: 16px; margin: 12px 0; font-size: 18px; color: #E65100;
+  }
+  .hidden { display: none; }
+  .sim-tag {
+    display: inline-block; background: #ECEFF1; color: #78909C;
+    padding: 2px 10px; border-radius: 12px; font-size: 12px; margin-left: 8px;
+  }
+</style>
+</head>
+<body>
+<div class="header">👨‍👩‍👧 银龄放心单 · 家属端</div>
+<div class="container">
+  <!-- Rules Settings -->
+  <div class="section">
+    <h2>⚙️ 用餐规则设置</h2>
+    <div class="form-row">
+      <label>单餐最高金额（元）</label>
+      <input type="number" id="maxPrice" value="35" min="0" step="1">
+    </div>
+    <div class="form-row">
+      <label>允许的饮食偏好</label>
+      <select id="dietaryPref" multiple style="height:80px">
+        <option value="low_oil" selected>低油</option>
+        <option value="low_salt" selected>低盐</option>
+        <option value="low_sugar">低糖</option>
+        <option value="soft_food" selected>软烂易消化</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>禁止食材（逗号分隔）</label>
+      <input type="text" id="blockedItems" placeholder="例如：辣椒, 生蒜">
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="notifyTimeout" checked>
+      <label for="notifyTimeout">超时未确认收餐时提醒我</label>
+    </div>
+    <div class="form-row">
+      <label>未确认超时时间（分钟）</label>
+      <input type="number" id="timeoutMin" value="30" min="5" step="5">
+    </div>
+    <button class="btn btn-primary" onclick="saveRules()">保存规则</button>
+  </div>
+
+  <!-- Order List -->
+  <div class="section">
+    <h2>📋 老人用餐记录</h2>
+    <div id="alertArea"></div>
+    <div id="orderList"><p style="color:#999;font-size:16px">暂无订单记录</p></div>
+    <button class="btn btn-primary" style="background:#78909C" onclick="loadOrders()">刷新订单</button>
+  </div>
+
+  <!-- Contact -->
+  <div class="section">
+    <h2>📞 联系老人 <span class="sim-tag">模拟</span></h2>
+    <p style="font-size:16px;color:#666;margin-bottom:12px">通过电话或留言联系老人（当前为模拟功能）</p>
+    <div style="display:flex;gap:12px">
+      <button class="btn btn-warn" style="flex:1" onclick="contactElder('call')">📞 拨打电话</button>
+      <button class="btn btn-primary" style="flex:1" onclick="contactElder('message')">💬 发送留言</button>
+    </div>
+    <div id="contactResult" class="hidden" style="margin-top:12px;padding:14px;background:#E8F5E9;border-radius:10px;font-size:16px"></div>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:8000';
+const familyId = 'family_001';
+const elderId = 'elder_001';
+
+async function saveRules() {
+  const sel = document.getElementById('dietaryPref');
+  const allowed = Array.from(sel.selectedOptions).map(o => o.value);
+  const blocked = document.getElementById('blockedItems').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const rules = {
+    max_price: parseFloat(document.getElementById('maxPrice').value) || 35,
+    allowed_dietary: allowed,
+    blocked_items: blocked,
+    notify_on_unconfirm: document.getElementById('notifyTimeout').checked,
+    unconfirm_timeout_minutes: parseInt(document.getElementById('timeoutMin').value) || 30,
+  };
+  const res = await fetch(API + '/api/family/settings', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ family_id: familyId, elder_id: elderId, rules: rules })
+  });
+  const data = await res.json();
+  alert('✅ ' + data.message);
+}
+
+async function loadOrders() {
+  const res = await fetch(API + '/api/family/' + familyId + '/orders');
+  const orders = await res.json();
+  const list = document.getElementById('orderList');
+  const alertArea = document.getElementById('alertArea');
+  alertArea.innerHTML = '';
+  if (!orders.length) { list.innerHTML = '<p style="color:#999;font-size:16px">暂无订单记录</p>'; return; }
+  list.innerHTML = '';
+  const statusMap = {created:'已创建',paid:'已支付',preparing:'制作中',delivering:'配送中',delivered:'已送达',confirmed:'已确认收餐',unconfirmed_timeout:'超时未确认'};
+  orders.forEach(order => {
+    let badgeClass = 'badge-pending';
+    if (order.status === 'delivered') badgeClass = 'badge-delivered';
+    if (order.status === 'confirmed') badgeClass = 'badge-confirmed';
+    if (order.status === 'unconfirmed_timeout') badgeClass = 'badge-timeout';
+    const card = document.createElement('div');
+    card.className = 'order-card';
+    card.innerHTML = '<div class="order-header"><span class="order-meal">' + order.meal_name + '</span>' +
+      '<span class="order-status-badge ' + badgeClass + '">' + (statusMap[order.status]||order.status) + '</span></div>' +
+      '<div class="order-detail">价格：¥' + order.meal_price + ' | 订单号：' + order.order_id + '</div>' +
+      '<div class="rule-result ' + (order.rule_passed?'rule-pass':'rule-fail') + '">' +
+      (order.rule_passed ? '✅ 通过家属规则' : '⚠️ ' + (order.rule_detail||'未通过规则')) + '</div>';
+    list.appendChild(card);
+    if (order.status === 'delivered' && !order.confirmed) {
+      alertArea.innerHTML += '<div class="alert-bar">⚠️ 订单 ' + order.order_id + ' 已送达但老人尚未确认收餐</div>';
+    }
+  });
+}
+
+async function contactElder(type) {
+  const res = await fetch(API + '/api/family/contact', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ order_id: 'latest', family_id: familyId, contact_type: type })
+  });
+  if (res.ok) {
+    const data = await res.json();
+    const el = document.getElementById('contactResult');
+    el.textContent = data.message;
+    el.classList.remove('hidden');
+  }
+}
+
+loadOrders();
+</script>
+</body>
+</html>

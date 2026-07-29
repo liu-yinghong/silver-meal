@@ -1,0 +1,83 @@
+﻿[
+  {
+    "id": "meal_001",
+    "name": "清蒸鲈鱼套餐",
+    "description": "清蒸鲈鱼配时蔬和米饭，低油低盐，适合清淡饮食",
+    "price": 28.0,
+    "image_url": null,
+    "dietary_tags": ["low_oil", "low_salt"],
+    "calories": 450
+  },
+  {
+    "id": "meal_002",
+    "name": "番茄鸡蛋面",
+    "description": "手工面条配番茄鸡蛋，软烂易消化，少油",
+    "price": 18.0,
+    "image_url": null,
+    "dietary_tags": ["soft_food", "low_oil"],
+    "calories": 380
+  },
+  {
+    "id": "meal_003",
+    "name": "小米粥配蒸饺",
+    "description": "营养小米粥搭配鲜肉蒸饺，温热好消化",
+    "price": 22.0,
+    "image_url": null,
+    "dietary_tags": ["soft_food", "low_oil"],
+    "calories": 420
+  },
+  {
+    "id": "meal_004",
+    "name": "红烧排骨饭",
+    "description": "经典红烧排骨配白米饭，味道浓郁",
+    "price": 32.0,
+    "image_url": null,
+    "dietary_tags": [],
+    "calories": 650
+  },
+  {
+    "id": "meal_005",
+    "name": "蔬菜豆腐汤配馒头",
+    "description": "清淡蔬菜豆腐汤搭配白面馒头，低脂健康",
+    "price": 15.0,
+    "image_url": null,
+    "dietary_tags": ["low_oil", "low_salt", "soft_food"],
+    "calories": 320
+  },
+  {
+    "id": "meal_006",
+    "name": "宫保鸡丁饭",
+    "description": "微辣宫保鸡丁配米饭，花生酥脆",
+    "price": 25.0,
+    "image_url": null,
+    "dietary_tags": [],
+    "calories": 580
+  },
+  {
+    "id": "meal_007",
+    "name": "山药排骨粥",
+    "description": "山药与排骨慢熬成粥，营养温和易吸收",
+    "price": 20.0,
+    "image_url": null,
+    "dietary_tags": ["soft_food", "low_salt"],
+    "calories": 360
+  },
+  {
+    "id": "meal_008",
+    "name": "凉拌黄瓜鸡丝面",
+    "description": "清爽凉拌面配鸡丝黄瓜，适合天热时食用",
+    "price": 16.0,
+    "image_url": null,
+    "dietary_tags": ["low_oil"],
+    "calories": 340
+  },
+  {
+    "id": "meal_009",
+    "name": "南瓜小米糊配花卷",
+    "description": "南瓜小米糊细腻顺滑，搭配小花卷，低糖温和",
+    "price": 14.0,
+    "image_url": null,
+    "dietary_tags": ["low_sugar", "soft_food", "low_oil"],
+    "calories": 290
+  }
+]

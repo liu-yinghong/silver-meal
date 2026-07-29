@@ -1,0 +1,172 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>银龄放心单 - 老人端</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Microsoft YaHei", sans-serif; background: #FFF8F0; color: #333; min-height: 100vh; }
+  .header { background: #E85D3A; color: #fff; padding: 20px; text-align: center; font-size: 28px; font-weight: bold; }
+  .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+  .input-area { margin: 20px 0; }
+  .input-area label { font-size: 22px; font-weight: bold; display: block; margin-bottom: 10px; }
+  .input-area textarea {
+    width: 100%; height: 100px; font-size: 24px; padding: 16px;
+    border: 3px solid #E85D3A; border-radius: 12px; resize: none;
+  }
+  .btn {
+    display: block; width: 100%; padding: 18px; font-size: 24px; font-weight: bold;
+    border: none; border-radius: 12px; cursor: pointer; margin-top: 16px; color: #fff;
+  }
+  .btn-primary { background: #E85D3A; }
+  .btn-primary:hover { background: #D14A28; }
+  .btn-success { background: #4CAF50; }
+  .btn-success:hover { background: #388E3C; }
+  .meal-card {
+    background: #fff; border: 3px solid #ddd; border-radius: 16px;
+    padding: 20px; margin: 12px 0; font-size: 20px; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .meal-card:hover { border-color: #E85D3A; box-shadow: 0 4px 12px rgba(232,93,58,0.2); }
+  .meal-card.selected { border-color: #E85D3A; background: #FFF0EB; }
+  .meal-name { font-size: 24px; font-weight: bold; color: #E85D3A; }
+  .meal-desc { margin: 8px 0; color: #666; font-size: 18px; }
+  .meal-price { font-size: 22px; font-weight: bold; color: #333; }
+  .meal-tags { margin-top: 8px; }
+  .tag { display: inline-block; background: #FFF0EB; color: #E85D3A; padding: 4px 12px; border-radius: 20px; font-size: 14px; margin-right: 6px; }
+  .query-summary { background: #E3F2FD; border-radius: 12px; padding: 16px; margin: 16px 0; font-size: 18px; }
+  .hidden { display: none; }
+  .order-status {
+    background: #fff; border: 3px solid #4CAF50; border-radius: 16px;
+    padding: 24px; margin: 16px 0; text-align: center;
+  }
+  .order-status h2 { color: #4CAF50; font-size: 26px; }
+  .status-label { font-size: 22px; color: #E85D3A; font-weight: bold; margin: 12px 0; }
+  .confirm-area { text-align: center; margin-top: 20px; }
+</style>
+</head>
+<body>
+<div class="header">🍽️ 银龄放心单</div>
+<div class="container">
+  <!-- Step 1: Input -->
+  <div id="step-input" class="input-area">
+    <label for="userInput">您今天想吃什么？</label>
+    <textarea id="userInput" placeholder="例如：想吃清淡一点，30元以内">想吃清淡一点，30元以内</textarea>
+    <button class="btn btn-primary" onclick="getRecommendations()">帮我推荐</button>
+  </div>
+
+  <!-- Step 2: Recommendations -->
+  <div id="step-recommend" class="hidden">
+    <div class="query-summary" id="querySummary"></div>
+    <div id="mealList"></div>
+    <button class="btn btn-primary hidden" id="btnOrder" onclick="placeOrder()">就选这个，下单</button>
+  </div>
+
+  <!-- Step 3: Order Status -->
+  <div id="step-order" class="hidden">
+    <div class="order-status">
+      <h2>✅ 已下单</h2>
+      <p class="status-label" id="orderStatusText">订单准备中...</p>
+      <p id="orderDetail"></p>
+      <button class="btn btn-primary" style="margin-top:16px" onclick="advanceOrder()">模拟下一步（制作/配送）</button>
+    </div>
+  </div>
+
+  <!-- Step 4: Confirm -->
+  <div id="step-confirm" class="hidden">
+    <div class="order-status" style="border-color:#E85D3A">
+      <h2 style="color:#E85D3A">📦 外卖已送达</h2>
+      <p style="font-size:20px;margin:12px 0">您已经收到餐食了吗？</p>
+      <div class="confirm-area">
+        <button class="btn btn-success" onclick="confirmReceived()">我收到了</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Done -->
+  <div id="step-done" class="hidden">
+    <div class="order-status">
+      <h2>🎉 已确认收餐</h2>
+      <p style="font-size:20px;margin:12px 0">祝您用餐愉快！</p>
+      <button class="btn btn-primary" style="margin-top:16px" onclick="location.reload()">再点一单</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:8000';
+let selectedMealId = null;
+let orderId = null;
+
+function showStep(step) {
+  ['step-input','step-recommend','step-order','step-confirm','step-done'].forEach(s => {
+    document.getElementById(s).classList.add('hidden');
+  });
+  document.getElementById(step).classList.remove('hidden');
+}
+
+async function getRecommendations() {
+  const text = document.getElementById('userInput').value.trim();
+  if (!text) return alert('请输入您的需求');
+  const res = await fetch(API + '/api/meals/recommend', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ text_input: text })
+  });
+  const data = await res.json();
+  document.getElementById('querySummary').textContent = '🔍 ' + data.query_summary;
+  const list = document.getElementById('mealList');
+  list.innerHTML = '';
+  const tagMap = {low_oil:'低油',low_salt:'低盐',low_sugar:'低糖',soft_food:'软烂',none:'无'};
+  data.meals.forEach(meal => {
+    const tags = (meal.dietary_tags||[]).map(t => '<span class="tag">' + (tagMap[t]||t) + '</span>').join('');
+    const card = document.createElement('div');
+    card.className = 'meal-card';
+    card.innerHTML = '<div class="meal-name">' + meal.name + '</div>' +
+      '<div class="meal-desc">' + meal.description + '</div>' +
+      '<div class="meal-price">¥' + meal.price + '</div>' +
+      '<div class="meal-tags">' + tags + '</div>';
+    card.onclick = () => {
+      document.querySelectorAll('.meal-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      selectedMealId = meal.id;
+      document.getElementById('btnOrder').classList.remove('hidden');
+    };
+    list.appendChild(card);
+  });
+  showStep('step-recommend');
+}
+
+async function placeOrder() {
+  if (!selectedMealId) return;
+  const res = await fetch(API + '/api/orders', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ meal_id: selectedMealId, elder_id: 'elder_001', family_id: 'family_001' })
+  });
+  const data = await res.json();
+  orderId = data.order_id;
+  document.getElementById('orderStatusText').textContent = '状态：已创建，等待制作';
+  document.getElementById('orderDetail').textContent = '订单号：' + orderId;
+  showStep('step-order');
+}
+
+async function advanceOrder() {
+  const res = await fetch(API + '/api/orders/' + orderId + '/advance', { method: 'POST' });
+  const data = await res.json();
+  const statusMap = {created:'已创建',paid:'已支付',preparing:'制作中',delivering:'配送中',delivered:'已送达'};
+  document.getElementById('orderStatusText').textContent = '状态：' + (statusMap[data.status] || data.status);
+  if (data.status === 'delivered') {
+    showStep('step-confirm');
+  }
+}
+
+async function confirmReceived() {
+  const res = await fetch(API + '/api/orders/confirm', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ order_id: orderId, action: 'confirm' })
+  });
+  showStep('step-done');
+}
+</script>
+</body>
+</html>
