@@ -16,7 +16,8 @@ class MealRepository(Protocol):
 
 
 class OrderRepository(Protocol):
-    def create_order(self, meal_id: str, elder_id: str, family_id: str | None) -> OrderCreateResponse:
+    def create_order(self, meal_id: str, elder_id: str, family_id: str | None,
+                     meal_name: str = '', meal_price: float = 0.0, eta_minutes: int = 35) -> OrderCreateResponse:
         ...
 
     def get_order_status(self, order_id: str) -> OrderStatusResponse | None:
@@ -26,6 +27,18 @@ class OrderRepository(Protocol):
         ...
 
     def advance_status(self, order_id: str) -> OrderStatusResponse | None:
+        ...
+
+    def cancel_order(self, order_id: str) -> OrderStatusResponse | None:
+        ...
+
+    def mark_unconfirmed_timeout(self, order_id: str) -> OrderStatusResponse | None:
+        ...
+
+    def reset(self) -> int:
+        ...
+
+    def get_meal_order_counts(self) -> dict[str, int]:
         ...
 
 
