@@ -95,7 +95,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--color-primary);
    PAGE 02: AI 思考中
    ============================================================ */
 .ai-character-area{display:flex;flex-direction:column;align-items:center;padding:var(--space-2xl) 0 var(--space-lg)}
-.ai-character{width:140px;height:140px;position:relative}.ai-character svg{width:100%;height:100%}
+.ai-robot-row{display:flex;align-items:center;justify-content:center;gap:var(--space-md);width:100%}
+.ai-character{width:140px;height:140px;position:relative;flex-shrink:0}.ai-character svg{width:100%;height:100%}
 .ai-glow{animation:aiGlow 2s ease-in-out infinite;transform-origin:center}
 @keyframes aiGlow{0%,100%{opacity:.3;r:38}50%{opacity:.6;r:42}}
 .ai-antenna-dot{animation:antennaBlink .8s ease-in-out infinite}
@@ -136,11 +137,10 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--color-primary);
 .timeline-step--done .step-icon--pending{display:none}.timeline-step--done .step-icon--active{display:none}.timeline-step--done .step-icon--done{display:block}
 .timeline-step--done .timeline-line{background:var(--color-success)}
 .timeline-step--error .step-title{color:var(--color-danger)}.timeline-step--error .step-desc{color:var(--color-danger)}
-.bottom-hint{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);width:calc(100% - 48px);max-width:382px;z-index:50}
-.bottom-hint-bounce{display:flex;align-items:center;justify-content:center;gap:var(--space-sm);padding:var(--space-md) var(--space-xl);background:var(--color-surface);border-radius:var(--radius-full);box-shadow:0 4px 20px rgba(255,90,0,.12);animation:hintBounce 2s ease-in-out infinite}
-@keyframes hintBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
-.hint-dot-icon{flex-shrink:0;animation:hintDotPulse 1.5s ease-in-out infinite}
-@keyframes hintDotPulse{0%,100%{opacity:.4}50%{opacity:1}}
+.ai-speech{position:relative;background:var(--color-surface);border:2px solid var(--color-primary-light);border-radius:var(--radius-lg);padding:var(--space-md) var(--space-lg);box-shadow:0 4px 20px rgba(255,90,0,.12);max-width:220px;animation:speechIn .45s ease-out}
+.ai-speech::after{content:'';position:absolute;left:-13px;top:50%;transform:translateY(-50%);border-top:11px solid transparent;border-bottom:11px solid transparent;border-right:13px solid var(--color-primary-light);z-index:1}
+.ai-speech::before{content:'';position:absolute;left:-10px;top:50%;transform:translateY(-50%);border-top:9px solid transparent;border-bottom:9px solid transparent;border-right:10px solid var(--color-surface);z-index:2}
+@keyframes speechIn{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
 .hint-text{font-size:var(--text-body);font-weight:var(--weight-medium);color:var(--color-text-primary)}
 .timeout-fallback{margin:var(--space-xl);padding:var(--space-xl);text-align:center;display:flex;flex-direction:column;align-items:center;gap:var(--space-md);animation:fadeIn .4s ease-out}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
@@ -189,16 +189,13 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--color-primary);
    PAGE 04: 订单配送中
    ============================================================ */
 .delivery-status-card{margin:var(--space-lg) var(--space-xl);background:var(--color-surface);border-radius:var(--radius-xl);box-shadow:var(--shadow-card);overflow:hidden}
-.status-scene{position:relative;width:100%;height:180px;background:linear-gradient(180deg,#FFF9F4 0%,#FFF0E3 100%);display:flex;align-items:center;justify-content:center}
-.scene{position:absolute;width:100%;height:100%;display:flex;align-items:center;justify-content:center}.scene svg{width:80%;max-width:240px;height:auto}
-.steam-1{animation:steamFloat 2s ease-in-out infinite}.steam-2{animation:steamFloat 2s ease-in-out .6s infinite}.steam-3{animation:steamFloat 2s ease-in-out 1.2s infinite}
-@keyframes steamFloat{0%,100%{opacity:.2;transform:translateY(0)}50%{opacity:.6;transform:translateY(-8px)}}
-.wheel-1,.wheel-2{animation:wheelSpin .8s linear infinite;transform-origin:center}
-@keyframes wheelSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-.speed-line{animation:speedLine .6s ease-out infinite}
-@keyframes speedLine{0%{opacity:0;transform:translateX(10px)}100%{opacity:.5;transform:translateX(-10px)}}
-.courier-bike{animation:bikeBounce .6s ease-in-out infinite}
-@keyframes bikeBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.status-meal-imgwrap{width:100%;aspect-ratio:5/3;background:#FFF9F4;position:relative}
+.status-meal-img{width:100%;height:100%;object-fit:cover;display:block}
+.status-meal-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+.status-meal-ph svg{width:100%;height:100%}
+.status-meal-meta{display:flex;align-items:baseline;justify-content:space-between;gap:var(--space-md);padding:var(--space-lg) var(--space-xl) 0}
+.status-meal-name{font-size:var(--text-h2);font-weight:var(--weight-bold);color:var(--color-text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.status-meal-price{font-size:var(--text-body-large);font-weight:var(--weight-bold);color:var(--color-primary);flex-shrink:0}
 .status-text-area{padding:var(--space-xl);text-align:center}
 .status-title{font-size:28px;font-weight:var(--weight-bold);color:var(--color-text-primary);margin-bottom:var(--space-sm)}
 .status-subtitle{font-size:var(--text-body);color:var(--color-text-secondary)}
@@ -241,7 +238,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--color-primary);
 .badge-subtitle{font-size:var(--text-body-large);color:var(--color-text-secondary);animation:fadeUpIn .5s .35s ease-out both}
 @keyframes fadeUpIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 .delivered-meal-card{margin:0 var(--space-xl) var(--space-xl);padding:var(--space-xl);background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);display:flex;flex-direction:column;align-items:center;box-shadow:var(--shadow-card)}
-.meal-card-icon{width:100%;max-width:200px;margin-bottom:var(--space-lg)}.meal-card-icon svg{width:100%;height:auto}
+.meal-card-icon{width:100%;max-width:100%;margin-bottom:var(--space-lg)}.meal-card-icon svg{width:100%;height:auto}
 .meal-card-name{font-size:28px;font-weight:var(--weight-bold);color:var(--color-text-primary);margin-bottom:var(--space-sm)}
 .meal-card-info{display:flex;align-items:center;gap:var(--space-md)}
 .meal-card-price{font-size:var(--text-body);font-weight:var(--weight-bold);color:var(--color-primary)}
@@ -364,16 +361,8 @@ select.form-input{appearance:none;-webkit-appearance:none;background-image:url("
 .cancel-confirm-btn--yes:active{background:#A92F22;transform:scale(.97)}
 
 /* ============================================================
-   配送页 · 餐品图
+   配送页 · 餐品图（已并入状态窗口，见 .status-meal-*）
    ============================================================ */
-.delivery-meal-card{margin:var(--space-md) var(--space-xl) var(--space-sm);background:var(--color-surface);border-radius:var(--radius-lg);padding:var(--space-md) var(--space-lg);display:flex;align-items:center;gap:var(--space-lg);box-shadow:var(--shadow-card)}
-.delivery-meal-imgwrap{width:96px;height:64px;border-radius:var(--radius-md);overflow:hidden;flex-shrink:0;background:#FFF9F4}
-.delivery-meal-img{width:100%;height:100%;object-fit:cover;display:block}
-.delivery-meal-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center}
-.delivery-meal-ph svg{width:100%;height:100%}
-.delivery-meal-meta{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
-.delivery-meal-name{font-size:var(--text-body);font-weight:var(--weight-bold);color:var(--color-text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.delivery-meal-price{font-size:var(--text-body);font-weight:var(--weight-bold);color:var(--color-primary)}
 
 /* ============================================================
    收餐页 · 餐品图

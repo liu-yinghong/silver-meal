@@ -67,6 +67,10 @@ class RecommendationEngine:
 
         candidates = self._rule_engine.filter_meals_by_rules(all_meals, family_rules) if family_rules else all_meals
 
+        # 用户明确说的价格上限也是硬约束：超预算餐食直接剔除，防止高分超预算餐品混入推荐
+        if price_max is not None:
+            candidates = [m for m in candidates if m.price <= price_max]
+
         scored = []
         for meal in candidates:
             score, reasons = self._score_meal(meal, keywords, prefs, price_max, family_rules)

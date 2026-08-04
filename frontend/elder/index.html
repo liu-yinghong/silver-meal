@@ -7,7 +7,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>饭心 AI · 银龄放心单</title>
-  <link rel="stylesheet" href="css/style.css?v=20260802l">
+  <link rel="stylesheet" href="css/style.css?v=20260802t">
 </head>
 <body>
 
@@ -143,8 +143,13 @@
       <div class="header-spacer"></div>
     </header>
     <div class="ai-character-area">
-      <div class="ai-character" id="aiCharacter">
-        <svg viewBox="0 0 120 120" fill="none"><circle cx="60" cy="70" r="38" fill="#FFF0E3" class="ai-glow"/><line x1="60" y1="6" x2="60" y2="22" stroke="#FF5A00" stroke-width="3" stroke-linecap="round"/><circle cx="60" cy="4" r="5" fill="#FF5A00" class="ai-antenna-dot"/><rect x="28" y="22" width="64" height="50" rx="14" fill="white" stroke="#FF5A00" stroke-width="3"/><circle cx="44" cy="46" r="7" fill="#FF5A00"/><circle cx="76" cy="46" r="7" fill="#FF5A00"/><circle cx="46" cy="44" r="3" fill="white" class="ai-eye-shine"/><circle cx="78" cy="44" r="3" fill="white" class="ai-eye-shine"/><rect x="43" y="57" width="34" height="4" rx="2" fill="#FF5A00" opacity=".5"/><rect x="18" y="38" width="12" height="20" rx="4" fill="#FFF0E3" stroke="#FF5A00" stroke-width="2.5"/><rect x="90" y="38" width="12" height="20" rx="4" fill="#FFF0E3" stroke="#FF5A00" stroke-width="2.5"/><rect x="34" y="76" width="52" height="36" rx="8" fill="white" stroke="#FF5A00" stroke-width="3"/><circle cx="60" cy="90" r="5" fill="#FF5A00" class="ai-heartbeat"/></svg>
+      <div class="ai-robot-row">
+        <div class="ai-character" id="aiCharacter">
+          <svg viewBox="0 0 120 120" fill="none"><circle cx="60" cy="70" r="38" fill="#FFF0E3" class="ai-glow"/><line x1="60" y1="6" x2="60" y2="22" stroke="#FF5A00" stroke-width="3" stroke-linecap="round"/><circle cx="60" cy="4" r="5" fill="#FF5A00" class="ai-antenna-dot"/><rect x="28" y="22" width="64" height="50" rx="14" fill="white" stroke="#FF5A00" stroke-width="3"/><circle cx="44" cy="46" r="7" fill="#FF5A00"/><circle cx="76" cy="46" r="7" fill="#FF5A00"/><circle cx="46" cy="44" r="3" fill="white" class="ai-eye-shine"/><circle cx="78" cy="44" r="3" fill="white" class="ai-eye-shine"/><rect x="43" y="57" width="34" height="4" rx="2" fill="#FF5A00" opacity=".5"/><rect x="18" y="38" width="12" height="20" rx="4" fill="#FFF0E3" stroke="#FF5A00" stroke-width="2.5"/><rect x="90" y="38" width="12" height="20" rx="4" fill="#FFF0E3" stroke="#FF5A00" stroke-width="2.5"/><rect x="34" y="76" width="52" height="36" rx="8" fill="white" stroke="#FF5A00" stroke-width="3"/><circle cx="60" cy="90" r="5" fill="#FF5A00" class="ai-heartbeat"/></svg>
+        </div>
+        <div class="ai-speech" id="bottomHint">
+          <span class="hint-text" id="bottomHintText">马上就好，正在为您找到合适的午餐！</span>
+        </div>
       </div>
       <div class="thinking-dots" id="thinkingDots">
         <span class="dot"></span><span class="dot"></span><span class="dot"></span>
@@ -193,12 +198,6 @@
           </div>
         </div>
         <div class="timeline-content"><div class="step-header"><span class="step-num">4</span><h3 class="step-title">生成方案</h3></div><p class="step-desc" data-default="综合评分，为您生成最佳推荐结果...">综合评分，为您生成最佳推荐结果...</p></div>
-      </div>
-    </div>
-    <div class="bottom-hint" id="bottomHint">
-      <div class="bottom-hint-bounce">
-        <svg class="hint-dot-icon" viewBox="0 0 16 16" width="16" height="16"><circle cx="8" cy="8" r="6" fill="#FF5A00" opacity=".3"/><circle cx="8" cy="8" r="3" fill="#FF5A00"/></svg>
-        <span class="hint-text" id="bottomHintText">马上就好，正在为您找到合适的午餐！</span>
       </div>
     </div>
     <div class="timeout-fallback" id="timeoutFallback" style="display:none;">
@@ -263,29 +262,16 @@
       <span class="page-title" id="deliveryTitle">订单配送中</span>
       <div class="header-spacer"></div>
     </header>
-    <div class="delivery-meal-card">
-      <div class="delivery-meal-imgwrap">
-        <img class="delivery-meal-img" id="deliveryMealImg" src="" alt="" style="display:none;">
-        <div class="delivery-meal-ph" id="deliveryMealPh">
+    <div class="delivery-status-card">
+      <div class="status-meal-imgwrap">
+        <img class="status-meal-img" id="deliveryMealImg" src="" alt="" style="display:none;">
+        <div class="status-meal-ph" id="deliveryMealPh">
           <svg viewBox="0 0 200 140" fill="none"><ellipse cx="100" cy="105" rx="80" ry="18" fill="#E9E1DB" opacity=".4"/><ellipse cx="100" cy="80" rx="65" ry="42" fill="white" stroke="#E9E1DB" stroke-width="2"/><ellipse cx="100" cy="76" rx="48" ry="30" fill="#FFF9F4"/><ellipse cx="78" cy="70" rx="20" ry="14" fill="white" stroke="#E9E1DB" stroke-width="1.5"/><path d="M92 58C98 48 112 48 120 54" fill="#FF5A00" opacity=".2" stroke="#FF5A00" stroke-width="2" stroke-linecap="round"/><circle cx="55" cy="72" r="10" fill="#35B84A" opacity=".15" stroke="#35B84A" stroke-width="1.5"/><circle cx="95" cy="85" r="8" fill="#F28C28" opacity=".15" stroke="#F28C28" stroke-width="1.5"/></svg>
         </div>
       </div>
-      <div class="delivery-meal-meta">
-        <span class="delivery-meal-name" id="deliveryMealName">正在为您准备餐品...</span>
-        <span class="delivery-meal-price" id="deliveryMealPrice"></span>
-      </div>
-    </div>
-    <div class="delivery-status-card">
-      <div class="status-scene" id="statusScene">
-        <div class="scene scene--preparing" id="scenePreparing">
-          <svg viewBox="0 0 200 140" fill="none"><rect x="30" y="50" width="140" height="60" rx="8" fill="#FFF0E3" stroke="#FF5A00" stroke-width="1.5" opacity=".5"/><ellipse cx="100" cy="80" rx="35" ry="12" fill="#E9E1DB" opacity=".5"/><path d="M65 80C65 60 95 50 100 50C105 50 135 60 135 80" fill="white" stroke="#FF5A00" stroke-width="2"/><path d="M85 48C88 42 92 42 90 48" stroke="#FF5A00" stroke-width="1.5" stroke-linecap="round" opacity=".4" class="steam-1"/><path d="M100 46C103 38 107 38 105 46" stroke="#FF5A00" stroke-width="1.5" stroke-linecap="round" opacity=".5" class="steam-2"/><path d="M115 48C118 42 122 42 120 48" stroke="#FF5A00" stroke-width="1.5" stroke-linecap="round" opacity=".4" class="steam-3"/></svg>
-        </div>
-        <div class="scene scene--delivering" id="sceneDelivering" style="display:none;">
-          <svg viewBox="0 0 200 140" fill="none"><line x1="10" y1="110" x2="190" y2="110" stroke="#E9E1DB" stroke-width="2" stroke-dasharray="8,4"/><rect x="80" y="78" width="50" height="30" rx="6" fill="white" stroke="#FF5A00" stroke-width="2.5" class="courier-bike"/><circle cx="92" cy="108" r="10" fill="none" stroke="#74655E" stroke-width="2.5" class="wheel-1"/><circle cx="118" cy="108" r="10" fill="none" stroke="#74655E" stroke-width="2.5" class="wheel-2"/><circle cx="115" cy="70" r="10" fill="white" stroke="#FF5A00" stroke-width="2"/><circle cx="112" cy="67" r="2" fill="#FF5A00"/><circle cx="118" cy="67" r="2" fill="#FF5A00"/><path d="M112 75C114 78 116 78 118 75" stroke="#FF5A00" stroke-width="1.5" stroke-linecap="round"/><rect x="70" y="74" width="22" height="16" rx="4" fill="#FFF0E3" stroke="#FF5A00" stroke-width="2"/><line x1="50" y1="90" x2="58" y2="90" stroke="#FF5A00" stroke-width="1.5" stroke-linecap="round" opacity=".4" class="speed-line"/><line x1="45" y1="95" x2="55" y2="95" stroke="#FF5A00" stroke-width="1.5" stroke-linecap="round" opacity=".3" class="speed-line"/><circle cx="180" cy="110" r="6" fill="#35B84A" opacity=".2" stroke="#35B84A" stroke-width="2"/><path d="M178 110L180 113L183 108" stroke="#35B84A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
-        <div class="scene scene--delivered" id="sceneDelivered" style="display:none;">
-          <svg viewBox="0 0 200 140" fill="none"><circle cx="100" cy="65" r="35" fill="#35B84A" opacity=".1"/><circle cx="100" cy="65" r="22" fill="#35B84A"/><path d="M88 65L96 73L112 57" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="75" y="90" width="50" height="35" rx="6" fill="white" stroke="#35B84A" stroke-width="2"/></svg>
-        </div>
+      <div class="status-meal-meta">
+        <span class="status-meal-name" id="deliveryMealName">正在为您准备餐品...</span>
+        <span class="status-meal-price" id="deliveryMealPrice"></span>
       </div>
       <div class="status-text-area">
         <h2 class="status-title" id="statusTitle">商家正在制作中</h2>
@@ -580,6 +566,6 @@
 </div>
 
         <script src="js/api.js?v=20260802g"></script>
-        <script src="js/app.js?v=20260802o"></script>
+        <script src="js/app.js?v=20260802u"></script>
 </body>
 </html>

@@ -12,6 +12,14 @@ def client(monkeypatch):
     import app.adapters.web_api as web_api
     # 推荐链路固定走本地解析，避免测试依赖网络
     web_api.meal_service._recommender._llm = LLMService(use_remote=False)
+    # 今日推荐 / 分析 / SSE 工作流也用本地大模型，保证测试快速、可离线
+    for _svc in (web_api.today_service, web_api.analysis_service, web_api.workflow):
+        if getattr(_svc, '_llm', None):
+            _svc._llm._use_remote = False
+        if getattr(_svc, '_recommender', None) and getattr(_svc._recommender, '_llm', None):
+            _svc._recommender._llm._use_remote = False
+        if getattr(_svc, '_today', None) and getattr(_svc._today, '_llm', None):
+            _svc._today._llm._use_remote = False
     # 每个用例重置持久化状态，保证隔离
     web_api.order_repo.reset()
     web_api.family_repo.reset()
@@ -344,3 +352,103 @@ def test_analysis_endpoint(client, monkeypatch):
     assert 0 <= d['suitability'] <= 100
     labels = ' '.join(m['label'] for m in d['matches'])
     assert '预算' in labels
+
+
+def test_recommend_user_budget_hard_filter_api(client):
+    """接口级验证：用户明确说价格上限，超预算餐品被硬剔除（咖喱鸡肉饭 28 元不应出现）。"""
+    r = client.post('/api/meals/recommend', json={
+        'text_input': '咖喱鸡肉饭，20元以内', 'family_id': 'family_001',
+    })
+    assert r.status_code == 200
+    data = r.json()
+    assert data['meals'], '应有推荐结果'
+    assert all(m['price'] <= 20 for m in data['meals'])
+    assert not any(m['id'] == 'meal_030' for m in data['meals'])
+
+
+def test_today_recommend_api(client):
+    """今日推荐：返回 1~3 份符合家属规则的餐食，reasons 与 meals 一一对应。"""
+    r = client.post('/api/meals/today', json={
+        'family_id': 'family_001', 'elder_id': 'elder_001',
+    })
+    assert r.status_code == 200
+    data = r.json()
+    assert 1 <= len(data['meals']) <= 3
+    assert len(data['reasons']) == len(data['meals'])
+    assert data['ai_mode'] in ('remote', 'local')
+
+
+def test_order_timeout_api(client):
+    """送达后未确认 → 可标记为超时未确认。"""
+    oid = client.post('/api/orders', json={
+        'meal_id': 'meal_001', 'elder_id': 'elder_001', 'family_id': 'family_001',
+    }).json()['order_id']
+    for _ in range(5):
+        client.post(f'/api/orders/{oid}/advance')
+    r = client.post(f'/api/orders/{oid}/timeout')
+    assert r.status_code == 200
+    assert r.json()['status'] == 'unconfirmed_timeout'
+
+
+def test_order_cancel_api(client):
+    """进行中的订单可取消。"""
+    oid = client.post('/api/orders', json={
+        'meal_id': 'meal_001', 'elder_id': 'elder_001', 'family_id': 'family_001',
+    }).json()['order_id']
+    r = client.post(f'/api/orders/{oid}/cancel')
+    assert r.status_code == 200
+    assert r.json()['status'] == 'cancelled'
+
+
+def test_family_rules_roundtrip_api(client):
+    """家属规则保存后读取一致。"""
+    client.post('/api/family/settings', json={
+        'family_id': 'family_003', 'elder_id': 'elder_001',
+        'rules': {'max_price': 25, 'allowed_dietary': ['low_oil'], 'blocked_items': ['海鲜'],
+                  'notify_on_unconfirm': True, 'unconfirm_timeout_minutes': 45, 'notes': '少放盐'},
+    })
+    r = client.get('/api/family/family_003/rules?elder_id=elder_001')
+    assert r.status_code == 200
+    rules = r.json()
+    assert rules['max_price'] == 25
+    assert rules['allowed_dietary'] == ['low_oil']
+    assert rules['blocked_items'] == ['海鲜']
+    assert rules['unconfirm_timeout_minutes'] == 45
+    assert rules['notes'] == '少放盐'
+
+
+def test_weather_endpoint_fallback(client, monkeypatch):
+    """天气接口：获取失败时返回降级结构，不抛错。"""
+    def fake_weather(self, lat=None, lon=None):
+        return {'temp': None, 'condition': '获取失败', 'icon': '🌤️', 'source': 'fallback', 'date': '', 'location': '上海'}
+    monkeypatch.setattr('app.core.weather_service.WeatherService.get_weather', fake_weather)
+    r = client.get('/api/weather')
+    assert r.status_code == 200
+    data = r.json()
+    assert 'condition' in data and 'temp' in data and 'icon' in data
+
+
+def test_recommend_stream_api(client):
+    """SSE 工作流：逐步推送事件，最终生成推荐方案。"""
+    with client.stream('POST', '/api/meals/recommend/stream', json={
+        'text_input': '清淡一点', 'family_id': 'family_001', 'elder_id': 'elder_001', 'mode': 'input',
+    }) as resp:
+        assert resp.status_code == 200
+        assert resp.headers.get('content-type', '').startswith('text/event-stream')
+        body = ''.join(resp.iter_text())
+    assert 'data:' in body
+    assert '"step"' in body
+    assert '"status"' in body
+    assert '"result"' in body or '生成推荐' in body
+
+
+def test_contact_elder_api(client):
+    """家属联系老人（模拟）：返回 success。"""
+    oid = client.post('/api/orders', json={
+        'meal_id': 'meal_001', 'elder_id': 'elder_001', 'family_id': 'family_001',
+    }).json()['order_id']
+    r = client.post('/api/family/contact', json={
+        'order_id': oid, 'family_id': 'family_001', 'contact_type': 'call',
+    })
+    assert r.status_code == 200
+    assert r.json()['status'] == 'success'

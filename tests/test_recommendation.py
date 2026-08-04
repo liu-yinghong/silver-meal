@@ -52,6 +52,14 @@ def test_user_price_budget(meals, engine):
     assert all(r.meal.price <= 20 for r in results)
 
 
+def test_user_price_is_hard_filter(meals, engine):
+    # 用户明确说价格上限：超预算的高分餐品（咖喱鸡肉饭 28元）必须被硬剔除
+    results, _, _ = engine.recommend('咖喱鸡肉饭，20元以内', meals, None)
+    assert results
+    assert all(r.meal.price <= 20 for r in results)
+    assert not any(r.meal.id == 'meal_030' for r in results)
+
+
 def test_light_dietary_matches(meals, engine):
     results, summary, _ = engine.recommend('今天想吃清淡一点', meals, None)
     assert results

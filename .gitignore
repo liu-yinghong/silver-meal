@@ -6,4 +6,7 @@ node_modules/
 *.egg-info/
 dist/
 build/
+scripts/
 tmp/
+.agents/
+.claude/

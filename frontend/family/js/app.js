@@ -25,6 +25,15 @@ var PageManager = {
     if(nue){nue.classList.add('page--active');}
     if(this.pageHooks[this.current]&&this.pageHooks[this.current].onLeave) this.pageHooks[this.current].onLeave();
     this.current=name;
+    // 底部导航高亮由当前页面决定，避免返回时高亮停留在旧项
+    var navMap={status:'status', orderdetail:'orders', 'family-orders':'orders', profile:'profile'};
+    var nk=navMap[name], pv=this.pages[name];
+    if(nk&&pv){
+      var navEl=pv.querySelector('.bottom-nav');
+      if(navEl) navEl.querySelectorAll('.nav-item').forEach(function(n){
+        n.classList.toggle('nav-item--active', n.getAttribute('data-page')===nk);
+      });
+    }
     if(this.pageHooks[name]&&this.pageHooks[name].onEnter) this.pageHooks[name].onEnter();
     window.scrollTo({top:0,behavior:'smooth'});
   },
@@ -180,8 +189,6 @@ function init(){
   document.querySelectorAll('#page-status .nav-item').forEach(function(item){
     item.addEventListener('click',function(){
       var p=item.getAttribute('data-page');
-      document.querySelectorAll('#page-status .nav-item').forEach(function(n){n.classList.remove('nav-item--active');});
-      item.classList.add('nav-item--active');
       if(p==='orders') PageManager.navigate('family-orders');
       else if(p==='profile') PageManager.navigate('profile');
     });

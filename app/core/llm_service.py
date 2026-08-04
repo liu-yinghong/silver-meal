@@ -41,7 +41,7 @@ class LLMService:
     # ---- 远程：DashScope qwen ----
     def _remote_chat(self, system: str, user: str, temperature: float = 0,
                      max_tokens: int = 120, timeout: float | None = None,
-                     retry: bool = True) -> str | None:
+                     retry: bool = False) -> str | None:
         """调用远程大模型，返回纯文本内容；失败可选重试一次，最终返回 None。"""
         import time
         t = timeout if timeout is not None else self._timeout
@@ -117,7 +117,7 @@ class LLMService:
             f'候选餐食（格式：ID|名称|描述|价格元）：\n{meal_lines}\n'
             '请选出最合适今日天气的一份餐食。'
         )
-        content = self._remote_chat(system, user, temperature=0.3, max_tokens=150)
+        content = self._remote_chat(system, user, temperature=0.3, max_tokens=150, timeout=20, retry=False)
         if content is None:
             return None
         start = content.find('{')

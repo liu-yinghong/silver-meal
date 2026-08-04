@@ -23,11 +23,28 @@ class TodayService:
         self._rule_engine = RuleEngine()
         self._recommender = RecommendationEngine(self._llm)
         self._weather = WeatherService()
+        self._cache_key = None
+        self._cache_time = 0.0
+        self._cached_result = None
 
     def recommend_today(self, family_id: str, elder_id: str,
                         lat: float | None = None, lon: float | None = None
                         ) -> tuple[list[Meal], str, list[str], str]:
+        import time
         rules = self._family_repo.get_family_rules(family_id, elder_id)
+        cache_key = f'{family_id}:{elder_id}:{(rules.max_price if rules else "")}:{(rules.allowed_dietary if rules else "")}'
+        # 60 秒内同规则直接返回缓存，避免重复调用慢速大模型
+        now = time.time()
+        if now - self._cache_time < 60 and self._cache_key == cache_key and self._cached_result:
+            return self._cached_result
+        result = self._compute_today(rules, family_id, elder_id, lat, lon)
+        self._cached_result = result
+        self._cache_key = cache_key
+        self._cache_time = now
+        return result
+
+    def _compute_today(self, rules, family_id, elder_id,
+                       lat=None, lon=None) -> tuple[list[Meal], str, list[str], str]:
         all_meals = self._meal_repo.get_all_meals()
         candidates = self._rule_engine.filter_meals_by_rules(all_meals, rules) if rules else list(all_meals)
         if not candidates:
@@ -99,8 +116,9 @@ class TodayService:
             return None
         cond = weather.get('condition', '') or ''
         # 优先由大模型挑选（结果必须回查 meals 文件，防止模型虚构不存在的餐食）
+        # 候选只取前 5 份，避免提示词过长导致大模型超时降级
         try:
-            lines = '\n'.join(f'{m.id}|{m.name}|{m.description}|{m.price:g}' for m in valid[:15])
+            lines = '\n'.join(f'{m.id}|{m.name}|{m.description}|{m.price:g}' for m in valid[:5])
             pick = self._llm.pick_meal_for_weather(weather, lines)
             if pick and pick.get('meal_id'):
                 meal = self._meal_repo.get_meal_by_id(pick['meal_id'])

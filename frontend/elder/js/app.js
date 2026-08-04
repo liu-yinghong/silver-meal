@@ -42,6 +42,15 @@ var PageManager = {
       }
     }catch(err){ console.warn('onLeave 异常:', err); }
     this.current = name;
+    // 底部导航高亮由当前页面决定，避免返回时高亮停留在旧项
+    var navMap = {home:'home', orders:'orders', profile:'profile'};
+    var nk = navMap[name], pv = this.pages[name];
+    if(nk && pv){
+      var navEl = pv.querySelector('.bottom-nav');
+      if(navEl) navEl.querySelectorAll('.nav-item').forEach(function(n){
+        n.classList.toggle('nav-item--active', n.getAttribute('data-page') === nk);
+      });
+    }
     try{
       if(this.pageHooks[name] && this.pageHooks[name].onEnter){
         this.pageHooks[name].onEnter();
@@ -77,9 +86,6 @@ document.addEventListener('click', function(e){
   if(!item) return;
   var page = item.getAttribute('data-page');
   if(!page || !PageManager.pages[page]) return;
-  var nav = item.closest('.bottom-nav');
-  if(nav){ nav.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('nav-item--active'); }); }
-  item.classList.add('nav-item--active');
   PageManager.navigate(page);
 });
 
@@ -418,8 +424,6 @@ function bindEvents(){
   document.querySelectorAll('#page-home .nav-item').forEach(function(item){
     item.addEventListener('click',function(){
       var page=item.getAttribute('data-page');
-      document.querySelectorAll('#page-home .nav-item').forEach(function(n){n.classList.remove('nav-item--active');});
-      item.classList.add('nav-item--active');
       if(page==='orders') PageManager.navigate('orders');
       else if(page==='profile') PageManager.navigate('profile');
     });
@@ -561,8 +565,12 @@ async function handleFallback(){
   if(!r.error&&r.data){
     sessionStorage.setItem('recommendResult',JSON.stringify(r.data));
     sessionStorage.setItem('userQuery',q);
+    setTimeout(function(){ PageManager.navigate('recommend'); },300);
+  }else{
+    // 后端断开：本地推荐也不可用，明确提示并回首页，不进入推荐页
+    showToast((r.error&&r.error.code==='NETWORK_ERROR')?'服务器已断开，请重试':(r.error&&r.error.message||'推荐失败，请重试'),'error');
+    setTimeout(function(){ PageManager.navigate('home'); },800);
   }
-  setTimeout(function(){ PageManager.navigate('recommend'); },300);
 }
 
 function setBottomHint(){
@@ -611,11 +619,6 @@ init();
 // ================================================================
 (function(){
 var DOM={}, meals=[], reasons=[], currentMealIdx=0, querySummary='', isOrdering=false;
-var MOCK_MEALS=[
-  {id:'meal_005',name:'蔬菜豆腐汤配馒头',description:'清淡蔬菜豆腐汤搭配白面馒头，低脂健康',price:15.0,image_id:'meal_005_ui',image_url:'/elder/images/meal_005_ui.png',dietary_tags:['low_oil','low_salt','soft_food'],calories:320,eta_minutes:35},
-  {id:'meal_001',name:'清蒸鲈鱼套餐',description:'清蒸鲈鱼配时蔬和米饭，低油低盐，适合清淡饮食',price:28.0,image_id:'meal_001_ui',image_url:'/elder/images/meal_001_ui.png',dietary_tags:['low_oil','low_salt'],calories:450,eta_minutes:40},
-  {id:'meal_002',name:'番茄鸡蛋面',description:'家常番茄鸡蛋面，口感软烂，易消化',price:18.0,image_id:'meal_002_ui',image_url:'/elder/images/meal_002_ui.png',dietary_tags:['soft_food','low_oil'],calories:380,eta_minutes:25},
-];
 var TAG_LABELS={
   low_oil:'低油',low_salt:'低盐',low_sugar:'低糖',soft_food:'软烂易消化',
   vegetarian:'素食',high_protein:'高蛋白',low_carb:'低碳水',gluten_free:'无麸质',
@@ -673,7 +676,8 @@ function loadData(){
       querySummary=d.query_summary||uq; return true;
     }
   }catch(e){console.warn('解析推荐数据失败');} }
-  meals=MOCK_MEALS; reasons=meals.map(function(m){return genReasons(m);}); querySummary=uq||'今天想吃清淡一点，30元以内'; return false;
+  // 无推荐数据（后端断开等）：不退回硬编码假餐食，由 onEnter 提示并回首页
+  return false;
 }
 async function handleOrder(){
   if(isOrdering||currentMealIdx>=meals.length) return; isOrdering=true;
@@ -683,10 +687,8 @@ async function handleOrder(){
   var r=await API.createOrder(m.id);
   if(r.error){
     isOrdering=false; DOM.orderBtn.classList.remove('loading'); DOM.orderBtn.innerHTML='<span class="cta-text">就吃这个</span>'; DOM.swapBtn.disabled=meals.length<=1;
-    if(r.error.code==='NETWORK_ERROR'){
-      showToast('离线模式 · 模拟下单成功');
-      setTimeout(function(){ goDelivery('ORD-OFFLINE-'+Date.now(),m); },600);
-    }else{ showToast(r.error.message||'下单失败，请重试','error'); }
+    // 断网/失败一律明确报错，不创建假定单、不进入配送流程
+    showToast(r.error.code==='NETWORK_ERROR'?'网络异常，下单失败，请重试':(r.error.message||'下单失败，请重试'),'error');
     return;
   }
   showToast('下单成功！正在为您准备...','success');
@@ -730,7 +732,12 @@ async function loadReorder(){
     if(meals.length>=3) return;
     if(!seen[m.id]){ meals.push(m); seen[m.id]=1; }
   });
-  if(!meals.length){ meals=MOCK_MEALS.map(ensureMealImage); }
+  if(!meals.length){
+    // 后端断开/无数据：不退回硬编码假餐食，明确提示并回首页
+    showToast('服务器已断开，无法获取推荐，请重试','error');
+    setTimeout(function(){ PageManager.navigate('home'); },800);
+    return;
+  }
   reasons=meals.map(function(m){
     return (reorderMeal&&m.id===reorderMeal.id)?['您上次点过这份，为您再次下单']:[];
   });
@@ -754,7 +761,12 @@ PageManager.pageHooks.recommend = {
     }
     DOM.orderBtn.disabled=false;
     DOM.orderBtn.classList.remove('loading'); DOM.orderBtn.innerHTML='<span class="cta-text">就吃这个</span>';
-    loadData();
+    if(!loadData()){
+      // 无推荐数据（后端断开等）：明确提示并回首页
+      showToast('服务器已断开，无法获取推荐，请重试','error');
+      setTimeout(function(){ PageManager.navigate('home'); },800);
+      return;
+    }
     DOM.queryText.textContent=querySummary||'为您找到以下推荐';
     renderMeal(0);
   }
@@ -790,10 +802,7 @@ var HEADER_TITLES={
 var currentStatus='preparing', orderId='', orderData=null, etaMinutes=35, pollingTimer=null, countdownTimer=null, isAdvancing=false, deliveryNavTimer=null;
 
 function updateScene(s){
-  DOM.scenePreparing.style.display='none'; DOM.sceneDelivering.style.display='none'; DOM.sceneDelivered.style.display='none';
-  if(s==='created'||s==='paid'||s==='preparing') DOM.scenePreparing.style.display='flex';
-  else if(s==='delivering') DOM.sceneDelivering.style.display='flex';
-  else if(s==='delivered') DOM.sceneDelivered.style.display='flex';
+  // 状态窗口已改为展示餐品实拍图 + 状态文字，不再使用 SVG 场景
 }
 function updateStatusInfo(s){
   var info=STATUS_INFO[s]||STATUS_INFO['preparing'];
@@ -829,30 +838,38 @@ function advanceStatus(){
 }
 async function handleAdvance(){
   if(isAdvancing) return; isAdvancing=true;
-  var apiAdvanced=false;
-  if(orderId&&orderId.indexOf('OFFLINE')===-1&&orderId.indexOf('DEMO')===-1){
-    var r=currentStatus==='delivering'?await API.deliverOrder(orderId):await API.advanceOrder(orderId);
-    if(!r.error&&r.data){ var ns=r.data.status; if(ns&&ns!==currentStatus){
-      apiAdvanced=true;
-      syncUI(ns);
-      if(ns==='delivered'){ etaMinutes=0; DOM.etaTime.textContent='已送达'; DOM.etaCountdown.textContent='请确认收餐'; DOM.advanceBtn.disabled=true; DOM.advanceBtn.textContent='✓ 已送达';
-        showToast('餐品已送达！','success'); if(deliveryNavTimer)clearTimeout(deliveryNavTimer);deliveryNavTimer=setTimeout(function(){PageManager.navigate('receipt');},2000); isAdvancing=false; return; }
-    } }
-  }
-  // 仅当 API 未推进状态（离线/模拟/请求失败）时才用本地模拟，避免 UI 领先后端导致确认失败
-  if(!apiAdvanced){
+  var isSim=orderId.indexOf('OFFLINE')!==-1||orderId.indexOf('DEMO')!==-1;
+  if(isSim){
+    // 模拟/演示订单：本地推进状态（离线演示路径）
     var nx=advanceStatus();
     if(nx==='delivered') showToast('餐品已送达！正在进入收餐确认...','success');
     else if(nx) showToast('状态已更新：'+(STATUS_INFO[nx]?STATUS_INFO[nx].title:nx));
+    isAdvancing=false;
+    return;
+  }
+  if(!orderId){ showToast('暂无订单'); isAdvancing=false; return; }
+  var r=currentStatus==='delivering'?await API.deliverOrder(orderId):await API.advanceOrder(orderId);
+  if(r.error){
+    // 真实订单断网/失败 → 明确报错，不本地模拟状态
+    showToast(r.error.code==='NETWORK_ERROR'?'网络异常，状态更新失败，请重试':(r.error.message||'状态更新失败，请重试'),'error');
+    isAdvancing=false;
+    return;
+  }
+  var ns=r.data&&r.data.status;
+  if(ns&&ns!==currentStatus){
+    syncUI(ns);
+    if(ns==='delivered'){ etaMinutes=0; DOM.etaTime.textContent='已送达'; DOM.etaCountdown.textContent='请确认收餐'; DOM.advanceBtn.disabled=true; DOM.advanceBtn.textContent='✓ 已送达';
+      showToast('餐品已送达！','success'); if(deliveryNavTimer)clearTimeout(deliveryNavTimer);deliveryNavTimer=setTimeout(function(){PageManager.navigate('receipt');},2000); }
   }
   isAdvancing=false;
 }
 function loadOrderData(){
   var saved=sessionStorage.getItem('currentOrder');
   if(saved){ try{ orderData=JSON.parse(saved); orderId=orderData.order_id||''; currentStatus=orderData.status||'preparing'; etaMinutes=orderData.eta_minutes||35; }catch(e){} }
-  if(!orderData){ orderId='ORD-DEMO-'+Date.now(); orderData={order_id:orderId,status:'preparing',meal_name:'清蒸鲈鱼套餐',meal_price:28.0,eta_minutes:35}; currentStatus='preparing'; etaMinutes=35; sessionStorage.setItem('currentOrder',JSON.stringify(orderData)); }
+  if(!orderData) return false;   // 无订单信息时不创建假定单，由 onEnter 引导回首页
   if(currentStatus==='delivered'){ DOM.advanceBtn.disabled=true; DOM.advanceBtn.textContent='✓ 已送达'; }
   renderDeliveryMeal();
+  return true;
 }
 function renderDeliveryMeal(){
   if(!orderData) return;
@@ -895,27 +912,29 @@ function hideCancelConfirm(){
 function confirmCancelOrder(){
   hideCancelConfirm();
   var isReal=orderId.indexOf('OFFLINE')===-1&&orderId.indexOf('DEMO')===-1;
-  if(isReal){
-    API.cancelOrder(orderId).then(function(r){
-      if(r.error){
-        if(r.error.code==='NETWORK_ERROR'){ showToast('离线模式 · 已模拟取消'); PageManager.navigate('home'); }
-        else showToast(r.error.message||'取消失败，请重试','error');
-      }else{
-        showToast('订单已取消','success');
-        PageManager.navigate('home');
-      }
-    });
-  }else{
-    showToast('订单已取消','success');
+  if(!isReal){
+    // 模拟/演示订单：直接模拟取消回首页
+    showToast('已取消（演示订单）');
     PageManager.navigate('home');
+    return;
   }
+  API.cancelOrder(orderId).then(function(r){
+    if(r.error){
+      // 真实订单网络失败 → 明确报错，不假装成功
+      showToast(r.error.code==='NETWORK_ERROR'?'网络异常，取消失败，请重试':(r.error.message||'取消失败，请重试'),'error');
+    }else{
+      showToast('订单已取消','success');
+      PageManager.navigate('home');
+    }
+  });
 }
 function handleDeliveryHome(){ PageManager.navigate('home'); }
 
 PageManager.pageHooks.delivery = {
   onEnter: function(){
     isAdvancing=false;
-    loadOrderData(); syncUI(currentStatus);
+    if(!loadOrderData()){ showToast('暂无订单信息，请重新下单','error'); setTimeout(function(){ PageManager.navigate('home'); },800); return; }
+    syncUI(currentStatus);
     if(currentStatus==='delivered'){ DOM.advanceBtn.disabled=true; DOM.advanceBtn.textContent='✓ 已送达'; }
     else{ DOM.advanceBtn.disabled=false; DOM.advanceBtn.textContent='推进状态（Demo）'; }
     hideCancelConfirm();
@@ -929,7 +948,6 @@ PageManager.pageHooks.delivery = {
 };
 
 function init(){
-  DOM.scenePreparing=document.getElementById('scenePreparing'); DOM.sceneDelivering=document.getElementById('sceneDelivering'); DOM.sceneDelivered=document.getElementById('sceneDelivered');
   DOM.statusTitle=document.getElementById('statusTitle'); DOM.statusSubtitle=document.getElementById('statusSubtitle');
   DOM.etaTime=document.getElementById('etaTime'); DOM.etaCountdown=document.getElementById('etaCountdown');
   DOM.advanceBtn=document.getElementById('advanceBtn'); DOM.tipText=document.getElementById('tipText');
@@ -958,12 +976,13 @@ var DOM={}, orderData=null, isConfirming=false;
 function loadOrderData(){
   var saved=sessionStorage.getItem('currentOrder');
   if(saved){ try{orderData=JSON.parse(saved);}catch(e){} }
-  if(!orderData) orderData={order_id:'ORD-DEMO-'+Date.now(),meal_name:'清蒸鲈鱼套餐',meal_price:28.0};
+  if(!orderData) return false;   // 无订单信息时不创建假定单，由 onEnter 引导回首页
   DOM.rctMealName.textContent=orderData.meal_name||'推荐餐品';
   DOM.rctMealPrice.textContent='¥'+((orderData.meal_price||0).toFixed(2));
   DOM.rctOrderId.textContent=orderData.order_id||'ORD-XXXXXXXX';
   setMealImg(DOM.rctMealImg, DOM.rctMealPh, orderData.image_url);
   if(!orderData.image_url&&orderData.meal_id) fetchMealImage(orderData.meal_id, function(url){ orderData.image_url=url; setMealImg(DOM.rctMealImg, DOM.rctMealPh, url); });
+  return true;
 }
 function resetConfirmBtn(){
   isConfirming=false;
@@ -979,9 +998,10 @@ async function handleConfirm(){
   var isSim=(oid.indexOf('OFFLINE')!==-1||oid.indexOf('DEMO')!==-1);
   try{
     var r=isSim?{data:{status:'confirmed'},error:null}:await API.confirmReceipt(oid);
-    if(r.error&&r.error.code!=='NETWORK_ERROR'){
+    // 真实订单网络失败 → 明确报错，不假装确认成功
+    if(!isSim&&r.error){
       resetConfirmBtn();
-      showToast(r.error.message||'确认失败，请重试','error');
+      showToast(r.error.code==='NETWORK_ERROR'?'网络异常，确认失败，请重试':(r.error.message||'确认失败，请重试'),'error');
       return;
     }
   }catch(e){
@@ -1004,7 +1024,7 @@ PageManager.pageHooks.receipt = {
     resetConfirmBtn();
     if(DOM.confirmArea) DOM.confirmArea.style.display='';
     DOM.confirmSuccess.style.display='none';
-    loadOrderData();
+    if(!loadOrderData()){ showToast('暂无订单信息，请重新下单','error'); setTimeout(function(){ PageManager.navigate('home'); },800); return; }
   }
 };
 
