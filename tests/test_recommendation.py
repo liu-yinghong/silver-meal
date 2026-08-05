@@ -84,3 +84,38 @@ def test_rule_budget_reason_visible(meals, engine):
     results, _, _ = engine.recommend('清淡一点', meals, rules)
     assert results
     assert any('预算' in reason for r in results for reason in r.reasons)
+
+
+def _fallback_query(summary='我想吃龙肉'):
+    return {'summary': summary, 'dietary_preferences': [],
+            'price_max': None, 'price_min': None, 'keywords': ['龙肉']}
+
+
+def test_fallback_message_when_no_keyword_match(meals, engine):
+    """老人提到具体食物词但菜单没有 → 返回替代推荐 + 说明性提示语（本地模板）。"""
+    results, summary, _ = engine.recommend_from_query(_fallback_query(), meals, None)
+    assert results, '应返回替代餐食'
+    assert len(results) <= 3
+    assert '抱歉' in summary and '龙肉' in summary
+
+
+def test_fallback_respects_rules(meals, engine):
+    """未命中时返回的替代餐食必须仍符合家属规则。"""
+    rules = FamilyRule(max_price=30, blocked_items=['花生'])
+    results, summary, _ = engine.recommend_from_query(_fallback_query(), meals, rules)
+    assert results
+    assert '抱歉' in summary
+    for r in results:
+        assert r.meal.price <= 30
+        assert '花生' not in r.meal.name
+        assert '花生' not in r.meal.description
+
+
+def test_no_fallback_when_keyword_matched(meals, engine):
+    """关键词能命中餐食时，不触发“未找到”提示语。"""
+    results, summary, _ = engine.recommend_from_query(
+        {'summary': '想吃鲈鱼', 'dietary_preferences': [],
+         'price_max': None, 'price_min': None, 'keywords': ['鲈鱼']},
+        meals, None)
+    assert results
+    assert '没有找到' not in summary

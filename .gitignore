@@ -1,24 +1,12 @@
-# Python
-__pycache__/
+﻿__pycache__/
 *.pyc
-*.pyo
-.venv/
-venv/
 .env
-
-# 测试缓存
-.pytest_cache/
-
-# 运行时数据（demo 状态、临时文件）
-tmp/
-
-# 构建产物
+.venv/
+node_modules/
+*.egg-info/
 dist/
 build/
-*.egg-info/
-
-# 系统/编辑器
-.DS_Store
-Thumbs.db
-.idea/
-.vscode/
+scripts/
+tmp/
+.agents/
+.claude/

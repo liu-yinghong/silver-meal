@@ -79,6 +79,19 @@ class RecommendationEngine:
             scored.append(RecommendResult(meal, score, reasons))
 
         scored.sort(key=lambda r: r.score, reverse=True)
+
+        # 完全没有符合规则的候选 → 交由上游按“无合适餐食”处理
+        if not scored:
+            return [], f'抱歉，暂时没有找到符合您需求和家属规则的餐食，请放宽条件或联系家人调整规则', ai_mode
+
+        # 老人明确提到了具体食物词，但没有任何一份餐食命中 → 生成“未找到+替代推荐”提示语
+        matched = not keywords or any(
+            any(kw in r.meal.name or kw in r.meal.description for kw in keywords)
+            for r in scored
+        )
+        if not matched:
+            return self._fallback_recommend(summary, candidates, scored, family_rules, max_results)
+
         top = scored[:max_results]
 
         query_summary = f'您说：{summary or "您的需求"}，为您推荐以下餐食'
@@ -87,6 +100,50 @@ class RecommendationEngine:
             query_summary += f'（偏好：{"、".join(pref_names)}）'
 
         return top, query_summary, ai_mode
+
+    def _fallback_recommend(
+        self,
+        summary: str,
+        candidates: list[Meal],
+        scored: list[RecommendResult],
+        family_rules: FamilyRule | None,
+        max_results: int,
+    ) -> tuple[list[RecommendResult], str, str]:
+        """未命中老人需求时的兜底：优先让大模型挑选替代餐食并生成解释提示语；
+        大模型不可用时，用评分最高的候选 + 本地模板提示语。"""
+        by_id = {r.meal.id: r for r in scored}
+        rules_text = self._rules_hint(family_rules)
+        meal_lines = '\n'.join(f'{m.id}|{m.name}|{m.price:g}元' for m in candidates)
+        pick = self._llm.generate_fallback_recommendation(summary, meal_lines, rules_text=rules_text)
+
+        if pick and pick.get('meal_ids'):
+            picked: list[RecommendResult] = []
+            for mid in pick['meal_ids']:
+                if len(picked) >= max_results:
+                    break
+                if mid in by_id and not any(r.meal.id == mid for r in picked):
+                    picked.append(by_id[mid])
+            if picked:
+                return picked, pick.get('message') or self._fallback_message(summary), self._llm.last_source or 'remote'
+
+        return scored[:max_results], self._fallback_message(summary, family_rules), self._llm.last_source or 'local'
+
+    @staticmethod
+    def _fallback_message(summary: str, family_rules: FamilyRule | None = None) -> str:
+        want = (summary or '').strip() or '您想吃的'
+        if family_rules:
+            return f'抱歉，暂时没有找到与「{want}」完全匹配的餐食，已按家属规则为您挑选了下面几份比较合适的，您可以看看。'
+        return f'抱歉，暂时没有找到与「{want}」完全匹配的餐食，为您挑选了下面几份比较合适的，您可以看看。'
+
+    def _rules_hint(self, family_rules: FamilyRule | None) -> str | None:
+        if family_rules is None:
+            return None
+        parts = [f'家属规则：单餐最高{family_rules.max_price:g}元']
+        if family_rules.allowed_dietary:
+            parts.append('偏好' + '、'.join(self._tag_map.get(p, p) for p in family_rules.allowed_dietary))
+        if family_rules.blocked_items:
+            parts.append('禁食' + '、'.join(family_rules.blocked_items))
+        return '；'.join(parts)
 
     def _score_meal(
         self,

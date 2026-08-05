@@ -57,7 +57,10 @@ class RecommendWorkflow:
             yield self._ev(3, 'error', '没有符合家庭规则的餐品')
             yield self._ev(4, 'error', '无可推荐餐品，请放宽条件后重试')
             return
-        yield self._ev(3, 'done', f'已分析 {len(all_meals)} 份餐品，{len(meals)} 份符合要求')
+        if '没有找到' in summary or '抱歉' in summary or '不好意思' in summary:
+            yield self._ev(3, 'done', f'没有找到完全匹配的餐食，已为您挑选了 {len(meals)} 份替代餐食')
+        else:
+            yield self._ev(3, 'done', f'已分析 {len(all_meals)} 份餐品，{len(meals)} 份符合要求')
 
         # ---- Step 4 生成方案 ----
         yield self._ev(4, 'running', '综合评分中，为您生成最佳推荐方案...')

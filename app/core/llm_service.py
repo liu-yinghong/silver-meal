@@ -174,6 +174,53 @@ class LLMService:
         self.last_source = 'remote'
         return {'summary': summary, 'matches': clean}
 
+    def generate_fallback_recommendation(self, user_input: str, meal_lines: str,
+                                         rules_text: str | None = None) -> dict[str, Any] | None:
+        """老人需求在菜单中未命中时：大模型挑选替代餐食并生成解释提示语。失败返回 None。"""
+        if not (self._use_remote and self._api_key):
+            return None
+        system = (
+            '你是饭心点餐助手的餐食推荐官。老人提出的需求在菜单里没有完全对应的餐食，'
+            '需要你从候选餐食中挑选最接近、最合适的 3 份作为替代推荐，并生成一句给老人的解释提示语。'
+            '只输出 JSON，不要任何其他文字，格式：{"message":"给老人的提示语","meal_ids":["id1","id2","id3"]}。'
+            '提示语要求：口语化、亲切、符合老年人语言习惯；先说清楚没有找到的原因'
+            '（例如菜单里没有老人想吃的），再说已为老人推荐了什么方向的替代餐食；'
+            '一般以"抱歉"或"不好意思"开头，控制在 60 字以内。'
+            'meal_ids 从候选餐食中选 3 份最合适、与老人需求最接近的，必须填候选餐食里真实存在的 ID。'
+        )
+        user = f'老人的需求：{user_input}\n'
+        if rules_text:
+            user += f'{rules_text}\n'
+        user += f'候选餐食（ID|名称|价格元）：\n{meal_lines}\n请挑选替代餐食并生成提示语。'
+        content = self._remote_chat(system, user, temperature=0.4, max_tokens=200, timeout=8)
+        if content is None:
+            return None
+        text = content.strip()
+        if text.startswith('```'):
+            text = re.sub(r'^```[a-zA-Z]*\s*', '', text)
+            text = re.sub(r'\s*```$', '', text)
+        start = text.find('{')
+        end = text.rfind('}')
+        if start == -1 or end <= start:
+            return None
+        try:
+            data = json.loads(text[start:end + 1])
+        except Exception:
+            return None
+        if not isinstance(data, dict):
+            return None
+        message = data.get('message')
+        ids = data.get('meal_ids')
+        if not isinstance(message, str) or not message.strip():
+            return None
+        if not isinstance(ids, list):
+            return None
+        meal_ids = [str(i).strip() for i in ids if isinstance(i, str) and i.strip()]
+        if not meal_ids:
+            return None
+        self.last_source = 'remote'
+        return {'message': message.strip(), 'meal_ids': meal_ids}
+
     @staticmethod
     def _parse_analysis_json(content: str) -> dict[str, Any] | None:
         text = content.strip()

@@ -74,6 +74,15 @@ window.__onServerError=function(){
   });
 })();
 
+// ===== 图片地址统一解析：兼容后端 http(s) 托管与直接双击打开 HTML（file://）两种访问方式 =====
+// 根相对路径（/xxx）在 file:// 下会被浏览器错误解析到本地盘根目录，导致图片加载失败；
+// 因此统一拼接接口基址（API.BASE_URL），与其余接口调用保持一致。
+function resolveMealImgUrl(src){
+  if(!src) return src;
+  if(/^(https?:)?\/\//i.test(src)||src.indexOf('data:')===0) return src;
+  return (API.BASE_URL||'')+src;
+}
+
 // ==============================
 // 全局数据
 // ==============================
@@ -148,7 +157,7 @@ function updateOrderCard(order){
   var mid=order.meal_id||'', svg=DOM.orderMealIcon?DOM.orderMealIcon.querySelector('svg'):null;
   if(mid){
     DOM.orderMealImage.onerror=function(){ DOM.orderMealImage.style.display='none'; if(svg) svg.style.display='block'; };
-    DOM.orderMealImage.src='/elder/images/'+mid+'_ui.png?v=20260802';
+    DOM.orderMealImage.src=resolveMealImgUrl('/elder/images/'+mid+'_ui.png')+'?v=20260802';
     DOM.orderMealImage.style.display='block';
     if(svg) svg.style.display='none';
   }else{
@@ -736,7 +745,8 @@ function renderTodayOrders(orders){
     var stCls=(o.status==='cancelled'||o.status==='unconfirmed_timeout')?'too-status--cancel':(o.status==='delivered'||o.status==='confirmed')?'too-status--done':'';
     var rule=o.rule_passed!==false?'规则已通过':'需关注';
     var ruleCls=o.rule_passed!==false?'too-rule--pass':'too-rule--warn';
-    var imgHtml=o.meal_id?'<div class="too-imgwrap"><img class="too-img" src="/elder/images/'+o.meal_id+'_ui.png?v=20260802" alt="" onerror="this.parentElement.style.display=\'none\'"></div>':'';
+    var imgSrc=o.meal_id?resolveMealImgUrl('/elder/images/'+o.meal_id+'_ui.png')+'?v=20260802':'';
+    var imgHtml=o.meal_id?'<div class="too-imgwrap"><img class="too-img" src="'+imgSrc+'" alt="" onerror="this.parentElement.style.display=\'none\'"></div>':'';
     card.innerHTML='<div class="too-row">'+imgHtml+'<div class="too-info">'
       +'<div class="too-top"><span class="too-meal">'+escapeHtml(o.meal_name||'餐品')+'</span><span class="too-status '+stCls+'">'+st+'</span></div>'
       +'<div class="too-bottom"><span class="too-price">¥'+((o.meal_price||0).toFixed(2))+'</span><span class="too-meta"><span class="too-rule '+ruleCls+'">'+rule+'</span><span class="too-time">'+fmtTime(o.created_at)+'</span></span></div>'
@@ -797,7 +807,8 @@ function renderHistory(orders){
     var stCls=(o.status==='cancelled'||o.status==='unconfirmed_timeout')?'too-status--cancel':(o.status==='delivered'||o.status==='confirmed')?'too-status--done':'';
     var rule=o.rule_passed!==false?'规则已通过':'需关注';
     var ruleCls=o.rule_passed!==false?'too-rule--pass':'too-rule--warn';
-    var imgHtml=o.meal_id?'<div class="too-imgwrap"><img class="too-img" src="/elder/images/'+o.meal_id+'_ui.png?v=20260802" alt="" onerror="this.parentElement.style.display=\'none\'"></div>':'';
+    var imgSrc=o.meal_id?resolveMealImgUrl('/elder/images/'+o.meal_id+'_ui.png')+'?v=20260802':'';
+    var imgHtml=o.meal_id?'<div class="too-imgwrap"><img class="too-img" src="'+imgSrc+'" alt="" onerror="this.parentElement.style.display=\'none\'"></div>':'';
     card.innerHTML='<div class="too-row">'+imgHtml+'<div class="too-info">'
       +'<div class="too-top"><span class="too-meal">'+escapeHtml(o.meal_name||'餐品')+'</span><span class="too-status '+stCls+'">'+st+'</span></div>'
       +'<div class="too-bottom"><span class="too-price">¥'+((o.meal_price||0).toFixed(2))+'</span><span class="too-meta"><span class="too-rule '+ruleCls+'">'+rule+'</span><span class="too-time">'+fmtDateTime(o.created_at)+'</span></span></div>'

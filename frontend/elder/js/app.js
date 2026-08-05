@@ -116,25 +116,35 @@ window.__onServerError=function(){
 })();
 
 // ===== 全局工具：为餐食补充图片地址（供工作流/推荐页共用）=====
+// 图片地址统一解析：兼容后端 http(s) 托管与直接双击打开 HTML（file://）两种访问方式。
+// 根相对路径（/xxx）在 file:// 下会被浏览器错误解析到本地盘根目录，导致图片加载失败；
+// 因此统一拼接接口基址（API.BASE_URL），与其余接口调用保持一致。
+function resolveMealImgUrl(src){
+  if(!src) return src;
+  if(/^(https?:)?\/\//i.test(src)||src.indexOf('data:')===0) return src; // 绝对地址/协议相对/data 原样返回
+  return (API.BASE_URL||'')+src;
+}
 function ensureMealImage(m){
   if(!m||!m.id) return m;
   var imageId=m.image_id||(m.id+'_ui');
   if(!m.image_url&&imageId) m.image_url='/elder/images/'+imageId+'.png';
+  if(m.image_url) m.image_url=resolveMealImgUrl(m.image_url);
   return m;
 }
 // 设置餐品图片（带版本号防缓存）；url 为空或加载失败则显示占位图
 function setMealImg(imgEl, phEl, url){
   if(!imgEl) return;
   if(!url){ imgEl.style.display='none'; if(phEl) phEl.style.display='flex'; return; }
+  var full=resolveMealImgUrl(url);
   imgEl.onerror=function(){ imgEl.style.display='none'; if(phEl) phEl.style.display='flex'; };
-  imgEl.src=url+(url.indexOf('?')>=0?'&':'?')+'v=20260802';
+  imgEl.src=full+(full.indexOf('?')>=0?'&':'?')+'v=20260802';
   imgEl.style.display='block';
   if(phEl) phEl.style.display='none';
 }
 // 订单数据无图片时按 meal_id 兜底获取（返回后回调更新界面）
 function fetchMealImage(mealId, onDone){
   API.getMealById(mealId).then(function(r){
-    if(!r.error&&r.data&&r.data.image_url){ onDone && onDone(r.data.image_url); }
+    if(!r.error&&r.data&&r.data.image_url){ onDone && onDone(resolveMealImgUrl(r.data.image_url)); }
   }).catch(function(){});
 }
 
