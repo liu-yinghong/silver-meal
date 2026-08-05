@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>饭心 AI · 家属端</title>
+  <link rel="stylesheet" href="css/style.css?v=20260802w">
+</head>
+<body>
+
+<div class="app-container">
+
+  <!-- 共享 Toast -->
+  <div class="toast" id="toast" style="display:none;"></div>
+
+  <!-- 服务器连接失败提示 -->
+  <div class="server-error-overlay" id="serverErrorOverlay" style="display:none;">
+    <div class="server-error-box">
+      <div class="server-error-icon">
+        <svg viewBox="0 0 48 48" width="46" height="46" fill="none"><circle cx="24" cy="24" r="20" stroke="#FF5A00" stroke-width="2"/><line x1="24" y1="13" x2="24" y2="26" stroke="#FF5A00" stroke-width="2.5" stroke-linecap="round"/><circle cx="24" cy="32" r="2.5" fill="#FF5A00"/></svg>
+      </div>
+      <p class="server-error-title">服务器连接失败</p>
+      <p class="server-error-desc">无法连接到服务器，请确认服务器已启动后重试</p>
+      <button class="server-error-btn" id="serverErrorBtn">我知道了</button>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- PAGE B-01: 今日状态                                              -->
+  <!-- ============================================================ -->
+  <section class="page page--active" id="page-status">
+    <header class="brand-header">
+      <div class="brand-logo">
+        <div class="logo-icon-text">饭</div>
+        <span class="brand-name">饭心 AI</span>
+      </div>
+      <span class="brand-tag">家属端</span>
+    </header>
+
+    <!-- 长辈状态头部 ElderStatusHeader -->
+    <div class="elder-status-header">
+      <div class="elder-avatar">
+        <svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="22" fill="#FFF0E3" stroke="#FF5A00" stroke-width="2"/><circle cx="24" cy="18" r="8" fill="#FF5A00" opacity=".3"/><path d="M8 40C8 32 15 28 24 28C33 28 40 32 40 40" stroke="#FF5A00" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <div class="elder-info">
+        <h2 class="elder-name" id="homeElderName">张奶奶</h2>
+        <p class="elder-status-text" id="elderStatusText">今日已下单，餐品配送中</p>
+      </div>
+      <div class="elder-status-indicator" id="elderStatusDot"></div>
+    </div>
+
+    <!-- 今日订单卡片 TodayOrderCard -->
+    <div class="today-order-card" id="todayOrderCard">
+      <div class="order-card-header">
+        <h3 class="order-card-title">当前订单</h3>
+        <span class="order-status-badge" id="orderStatusBadge">配送中</span>
+      </div>
+      <div class="order-card-body" id="orderCardBody">
+        <div class="order-meal-row">
+          <div class="order-meal-icon">
+            <img class="order-meal-img" id="orderMealImage" src="" alt="" style="display:none;">
+            <svg viewBox="0 0 40 40" fill="none"><ellipse cx="20" cy="28" rx="16" ry="5" fill="#E9E1DB" opacity=".4"/><ellipse cx="20" cy="20" rx="12" ry="9" fill="white" stroke="#E9E1DB" stroke-width="1.5"/></svg>
+          </div>
+          <div class="order-meal-info">
+            <span class="order-meal-name" id="orderMealName">--</span>
+            <span class="order-meal-price" id="orderMealPrice">--</span>
+          </div>
+        </div>
+        <div class="order-meta-row">
+          <div class="order-meta-item">
+            <svg viewBox="0 0 16 16" width="14" height="14"><circle cx="8" cy="8" r="7" stroke="#74655E" stroke-width="1.5"/><path d="M8 4V8L10.5 10" stroke="#74655E" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <span id="orderEta">预计 -- 分钟</span>
+          </div>
+          <div class="order-meta-item">
+            <svg viewBox="0 0 16 16" width="14" height="14"><rect x="2" y="3" width="12" height="11" rx="2" stroke="#74655E" stroke-width="1.5"/><line x1="5" y1="7" x2="11" y2="7" stroke="#74655E" stroke-width="1.5"/><line x1="5" y1="10" x2="9" y2="10" stroke="#74655E" stroke-width="1.5"/></svg>
+            <span id="orderRulePass">规则已通过</span>
+          </div>
+        </div>
+      </div>
+      <!-- 无订单状态 -->
+      <div class="order-card-empty" id="orderCardEmpty" style="display:none;">
+        <div class="empty-icon">
+          <svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="#E9E1DB" stroke-width="2"/><line x1="16" y1="24" x2="32" y2="24" stroke="#E9E1DB" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+        <p class="empty-text">今日暂无订单</p>
+        <p class="empty-hint">长辈还未下单，稍后再来看看</p>
+      </div>
+      <div class="order-card-actions">
+        <button class="action-btn action-btn--primary" id="viewOrderBtn">查看订单详情</button>
+        <button class="action-btn action-btn--secondary" id="leaveMsgBtn">给长辈留言</button>
+      </div>
+    </div>
+
+    <!-- 快捷操作 FamilyQuickActions -->
+    <div class="family-quick-actions">
+      <button class="family-quick-btn" id="viewAnalysisBtn">
+        <div class="fq-icon fq-icon--analysis">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none"><rect x="3" y="3" width="18" height="18" rx="4" stroke="#FF5A00" stroke-width="2"/><line x1="8" y1="10" x2="16" y2="10" stroke="#FF5A00" stroke-width="2" stroke-linecap="round"/><line x1="8" y1="14" x2="13" y2="14" stroke="#FF5A00" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+        <span class="fq-label">AI 分析</span>
+        <span class="fq-desc">查看推荐依据</span>
+      </button>
+      <button class="family-quick-btn" id="settingsBtn">
+        <div class="fq-icon fq-icon--settings">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none"><circle cx="12" cy="12" r="3" stroke="#FF5A00" stroke-width="2"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="#FF5A00" stroke-width="2"/></svg>
+        </div>
+        <span class="fq-label">饮食规则</span>
+        <span class="fq-desc">管理偏好设置</span>
+      </button>
+    </div>
+
+    <!-- 底部导航 FamilyBottomNav -->
+    <nav class="bottom-nav">
+      <button class="nav-item nav-item--active" data-page="status">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M3 10L12 3L21 10V20C21 20.5 20.5 21 20 21H4C3.5 21 3 20.5 3 20V10Z" stroke="currentColor" stroke-width="2"/></svg>
+        <span class="nav-label">首页</span>
+      </button>
+      <button class="nav-item" data-page="orders">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" stroke="currentColor" stroke-width="2"/><line x1="8" y1="8" x2="16" y2="8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span class="nav-label">今日订单</span>
+      </button>
+      <button class="nav-item" data-page="profile">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/><path d="M4 20C4 16 7.5 14 12 14C16.5 14 20 16 20 20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span class="nav-label">我的</span>
+      </button>
+    </nav>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- PAGE B-02: AI 分析                                              -->
+  <!-- ============================================================ -->
+  <section class="page" id="page-analysis">
+    <header class="page-header">
+      <button class="back-btn" data-back="status">
+        <svg viewBox="0 0 24 24" width="24" height="24"><path d="M15 4L7 12L15 20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="page-title">AI 分析</span>
+      <div class="header-spacer"></div>
+    </header>
+
+    <!-- 分析摘要 AnalysisSummary -->
+    <div class="analysis-summary">
+      <div class="summary-header">
+        <svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="10" stroke="#FF5A00" stroke-width="2"/><path d="M12 6V12L16 14" stroke="#FF5A00" stroke-width="2" stroke-linecap="round"/></svg>
+        <span class="summary-title">本次推荐分析</span>
+      </div>
+      <p class="summary-text" id="analysisSummaryText">
+        根据张奶奶的口味偏好和家属设定的饮食规则，AI 综合评估后推荐了最适合的餐品。
+      </p>
+    </div>
+
+    <!-- 规则命中列表 RuleMatchList -->
+    <div class="rule-match-list">
+      <h3 class="rule-section-title">偏好与规则匹配</h3>
+      <div id="ruleMatchList"></div>
+    </div>
+
+    <!-- 适合度徽章 SuitabilityBadge -->
+    <div class="suitability-badge">
+      <div class="suitability-score">
+        <svg viewBox="0 0 64 64" width="64" height="64">
+          <circle cx="32" cy="32" r="28" fill="none" stroke="#E9E1DB" stroke-width="4"/>
+          <circle cx="32" cy="32" r="28" fill="none" stroke="#35B84A" stroke-width="4" stroke-dasharray="176" stroke-dashoffset="26" stroke-linecap="round" transform="rotate(-90 32 32)"/>
+        </svg>
+        <span class="score-text" id="analysisScore">--%</span>
+      </div>
+      <div class="suitability-info">
+        <span class="suitability-title">综合适合度</span>
+        <span class="suitability-desc" id="suitabilityDesc">AI 正在评估...</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- PAGE B-03: 订单详情                                              -->
+  <!-- ============================================================ -->
+  <section class="page" id="page-orderdetail">
+    <header class="page-header">
+      <button class="back-btn" data-back="status">
+        <svg viewBox="0 0 24 24" width="24" height="24"><path d="M15 4L7 12L15 20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="page-title">订单详情</span>
+      <div class="header-spacer"></div>
+    </header>
+
+    <!-- 订单信息卡片 -->
+    <div class="od-header-card">
+      <div class="od-meal-info">
+        <span class="od-meal-name" id="odMealName">清蒸鲈鱼套餐</span>
+        <span class="od-meal-price" id="odMealPrice">¥28.00</span>
+      </div>
+      <div class="od-id-row">
+        <span class="od-id" id="odOrderId">ORD-A1B2C3D4</span>
+        <span class="od-status-tag" id="odStatusTag">配送中</span>
+      </div>
+    </div>
+
+    <!-- 订单时间线 OrderTimeline -->
+    <div class="order-timeline" id="orderTimeline">
+      <div class="ot-step ot-step--done">
+        <div class="ot-indicator"><div class="ot-dot ot-dot--done"></div><div class="ot-line ot-line--done"></div></div>
+        <div class="ot-content">
+          <span class="ot-title">已下单</span>
+          <span class="ot-time" id="otTimeCreated">12:00</span>
+        </div>
+      </div>
+      <div class="ot-step ot-step--done">
+        <div class="ot-indicator"><div class="ot-dot ot-dot--done"></div><div class="ot-line ot-line--done"></div></div>
+        <div class="ot-content">
+          <span class="ot-title">商家接单</span>
+          <span class="ot-time" id="otTimePaid">12:02</span>
+        </div>
+      </div>
+      <div class="ot-step ot-step--done">
+        <div class="ot-indicator"><div class="ot-dot ot-dot--done"></div><div class="ot-line ot-line--active"></div></div>
+        <div class="ot-content">
+          <span class="ot-title">制作中</span>
+          <span class="ot-time" id="otTimePreparing">12:05</span>
+        </div>
+      </div>
+      <div class="ot-step ot-step--active">
+        <div class="ot-indicator"><div class="ot-dot ot-dot--active"></div><div class="ot-line"></div></div>
+        <div class="ot-content">
+          <span class="ot-title ot-title--current">配送中</span>
+          <span class="ot-time" id="otTimeDelivering">预计 12:35</span>
+        </div>
+      </div>
+      <div class="ot-step">
+        <div class="ot-indicator"><div class="ot-dot"></div></div>
+        <div class="ot-content">
+          <span class="ot-title">已送达</span>
+          <span class="ot-time ot-time--pending">待进入</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 收餐待确认提醒 ReceiptPendingAlert -->
+    <div class="receipt-alert" id="receiptAlert" style="display:none;">
+      <svg viewBox="0 0 20 20" width="18" height="18"><circle cx="10" cy="10" r="9" stroke="#F28C28" stroke-width="1.5"/><line x1="10" y1="5" x2="10" y2="11" stroke="#F28C28" stroke-width="1.5" stroke-linecap="round"/><circle cx="10" cy="14.5" r="1" fill="#F28C28"/></svg>
+      <span>餐品已送达，等待长辈确认收餐</span>
+    </div>
+
+    <!-- 返回 + 联系按钮 -->
+    <div class="od-actions">
+      <button class="action-btn action-btn--secondary" id="contactElderBtn">联系长辈（模拟）</button>
+    </div>
+
+    <!-- 模拟通话弹窗 -->
+    <div class="call-modal" id="callModal" style="display:none;">
+      <div class="call-bg"></div>
+      <div class="call-content">
+        <span class="call-sim-badge">模 拟</span>
+        <div class="call-avatar">
+          <svg viewBox="0 0 80 80" fill="none"><circle cx="40" cy="40" r="38" fill="#FFF0E3" stroke="#FF5A00" stroke-width="2"/><circle cx="40" cy="28" r="12" fill="#FF5A00" opacity=".3"/><path d="M16 64C16 52 26 46 40 46C54 46 64 52 64 64" stroke="#FF5A00" stroke-width="2.5" stroke-linecap="round"/></svg>
+        </div>
+        <h2 class="call-name">张奶奶</h2>
+        <p class="call-status" id="callStatus">正在呼叫...</p>
+        <p class="call-timer" id="callTimer" style="display:none;">00:00</p>
+        <p class="call-sim-hint">此通话为模拟演示，不会实际拨出</p>
+        <button class="call-hangup-btn" id="callHangupBtn" onclick="(function(){var m=document.getElementById('callModal');if(m)m.style.display='none';var t=document.getElementById('callStatus');if(t)t.textContent='正在呼叫...';var tm=document.getElementById('callTimer');if(tm)tm.style.display='none';})();">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none"><path d="M6.5 10.5C8 8.5 10 7.5 12 7.5C14 7.5 16 8.5 17.5 10.5L19 9C17 6.5 14.5 5 12 5C9.5 5 7 6.5 5 9L6.5 10.5Z" fill="white"/><path d="M9 13C10 11.5 11 11 12 11C13 11 14 11.5 15 13L16.5 11.5C14.5 9.5 12.5 8.5 12 8.5C11.5 8.5 9.5 9.5 7.5 11.5L9 13Z" fill="white"/><rect x="6" y="15" width="12" height="4" rx="1" fill="white"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <nav class="bottom-nav">
+      <button class="nav-item" data-page="status">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M3 10L12 3L21 10V20C21 20.5 20.5 21 20 21H4C3.5 21 3 20.5 3 20V10Z" stroke="currentColor" stroke-width="2"/></svg>
+        <span class="nav-label">首页</span>
+      </button>
+      <button class="nav-item nav-item--active" data-page="orders">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" stroke="currentColor" stroke-width="2"/><line x1="8" y1="8" x2="16" y2="8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span class="nav-label">今日订单</span>
+      </button>
+      <button class="nav-item" data-page="profile">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/><path d="M4 20C4 16 7.5 14 12 14C16.5 14 20 16 20 20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span class="nav-label">我的</span>
+      </button>
+    </nav>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- PAGE B-04: 家属留言                                              -->
+  <!-- ============================================================ -->
+  <section class="page" id="page-messages">
+    <header class="page-header">
+      <button class="back-btn" data-back="status">
+        <svg viewBox="0 0 24 24" width="24" height="24"><path d="M15 4L7 12L15 20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="page-title">留言</span>
+      <div class="header-spacer"></div>
+    </header>
+
+    <!-- 消息线程 MessageThread -->
+    <div class="message-thread" id="messageThread">
+      <div class="msg-empty" id="msgEmpty">
+        <div class="msg-empty-icon">
+          <svg viewBox="0 0 48 48" fill="none"><rect x="8" y="8" width="32" height="32" rx="8" stroke="#E9E1DB" stroke-width="2"/><path d="M16 22H32M16 28H26" stroke="#E9E1DB" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+        <p class="msg-empty-text">暂无留言</p>
+        <p class="msg-empty-hint">给长辈发送一条关心的消息</p>
+      </div>
+    </div>
+
+    <!-- 消息输入框 MessageComposer -->
+    <div class="message-composer">
+      <div class="composer-input-wrap">
+        <input type="text" class="composer-input" id="msgInput" placeholder="输入留言..." maxlength="500">
+      </div>
+      <button class="composer-send-btn" id="msgSendBtn" disabled>
+        <svg viewBox="0 0 20 20" width="18" height="18" fill="none"><path d="M4 10L16 2L14 18L10 12L4 10Z" fill="currentColor"/></svg>
+      </button>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- PAGE B-05: 饮食规则                                              -->
+  <!-- ============================================================ -->
+  <section class="page" id="page-settings">
+    <header class="page-header">
+      <button class="back-btn" data-back="status">
+        <svg viewBox="0 0 24 24" width="24" height="24"><path d="M15 4L7 12L15 20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="page-title">饮食规则</span>
+      <div class="header-spacer"></div>
+    </header>
+
+    <!-- 预算设置 -->
+    <div class="settings-group">
+      <div class="settings-group-header">
+        <svg viewBox="0 0 20 20" width="18" height="18"><circle cx="10" cy="10" r="9" stroke="#FF5A00" stroke-width="1.5"/><path d="M6 8C6 6.5 7.5 5.5 10 5.5C12.5 5.5 14 7 14 8.5C14 10.5 10 12.5 10 12.5C10 12.5 6 10.5 6 8Z" stroke="#FF5A00" stroke-width="1.5"/></svg>
+        <span class="settings-group-title">单餐预算上限</span>
+      </div>
+      <div class="budget-row">
+        <span class="budget-label">最高金额</span>
+        <div class="budget-input-wrap">
+          <span class="budget-symbol">¥</span>
+          <input type="number" class="budget-input" id="budgetInput" value="35" min="10" max="200" step="1">
+        </div>
+        <span class="budget-suffix">/ 餐</span>
+      </div>
+      <input type="range" class="budget-slider" id="budgetSlider" min="10" max="200" value="35" step="5">
+      <div class="budget-range-labels">
+        <span>¥10</span><span>¥50</span><span>¥100</span><span>¥150</span><span>¥200</span>
+      </div>
+    </div>
+
+    <!-- 饮食偏好 -->
+    <div class="settings-group">
+      <div class="settings-group-header">
+        <svg viewBox="0 0 20 20" width="18" height="18"><path d="M3 5H17M3 10H17M3 15H12" stroke="#FF5A00" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span class="settings-group-title">饮食偏好</span>
+      </div>
+      <p class="settings-group-desc">选择长辈适合的饮食类型，AI 推荐时会优先匹配</p>
+      <div class="dietary-options" id="dietaryOptions">
+        <label class="dietary-option">
+          <input type="checkbox" value="low_oil" checked>
+          <span class="dietary-checkbox"></span>
+          <div class="dietary-info">
+            <span class="dietary-name">低油</span>
+            <span class="dietary-example">少油烹饪，清淡健康</span>
+          </div>
+        </label>
+        <label class="dietary-option">
+          <input type="checkbox" value="low_salt" checked>
+          <span class="dietary-checkbox"></span>
+          <div class="dietary-info">
+            <span class="dietary-name">低盐</span>
+            <span class="dietary-example">控制盐分摄入</span>
+          </div>
+        </label>
+        <label class="dietary-option">
+          <input type="checkbox" value="low_sugar">
+          <span class="dietary-checkbox"></span>
+          <div class="dietary-info">
+            <span class="dietary-name">低糖</span>
+            <span class="dietary-example">减少糖分摄入</span>
+          </div>
+        </label>
+        <label class="dietary-option">
+          <input type="checkbox" value="soft_food">
+          <span class="dietary-checkbox"></span>
+          <div class="dietary-info">
+            <span class="dietary-name">软烂易消化</span>
+            <span class="dietary-example">适合牙口不好的长辈</span>
+          </div>
+        </label>
+        <label class="dietary-option">
+          <input type="checkbox" value="vegetarian">
+          <span class="dietary-checkbox"></span>
+          <div class="dietary-info">
+            <span class="dietary-name">素食</span>
+            <span class="dietary-example">无肉无海鲜的植物性饮食</span>
+          </div>
+        </label>
+        <label class="dietary-option">
+          <input type="checkbox" value="high_protein">
+          <span class="dietary-checkbox"></span>
+          <div class="dietary-info">
+            <span class="dietary-name">高蛋白</span>
+            <span class="dietary-example">补充蛋白质，增强营养</span>
+          </div>
+        </label>
+        <label class="dietary-option">
+          <input type="checkbox" value="low_carb">
+          <span class="dietary-checkbox"></span>
+          <div class="dietary-info">
+            <span class="dietary-name">低碳水</span>
+            <span class="dietary-example">控制主食和糖分</span>
+          </div>
+        </label>
+        <label class="dietary-option">
+          <input type="checkbox" value="gluten_free">
+          <span class="dietary-checkbox"></span>
+          <div class="dietary-info">
+            <span class="dietary-name">无麸质</span>
+            <span class="dietary-example">避免面筋不耐受</span>
+          </div>
+        </label>
+        <label class="dietary-option">
+          <input type="checkbox" value="halal">
+          <span class="dietary-checkbox"></span>
+          <div class="dietary-info">
+            <span class="dietary-name">清真</span>
+            <span class="dietary-example">清真饮食，不含猪肉</span>
+          </div>
+        </label>
+        <label class="dietary-option">
+          <input type="checkbox" value="no_pork">
+          <span class="dietary-checkbox"></span>
+          <div class="dietary-info">
+            <span class="dietary-name">无猪肉</span>
+            <span class="dietary-example">不吃猪肉</span>
+          </div>
+        </label>
+        <label class="dietary-option">
+          <input type="checkbox" value="no_seafood">
+          <span class="dietary-checkbox"></span>
+          <div class="dietary-info">
+            <span class="dietary-name">无海鲜</span>
+            <span class="dietary-example">不吃海鲜</span>
+          </div>
+        </label>
+        <label class="dietary-option">
+          <input type="checkbox" value="low_purine">
+          <span class="dietary-checkbox"></span>
+          <div class="dietary-info">
+            <span class="dietary-name">低嘌呤</span>
+            <span class="dietary-example">适合尿酸偏高人群</span>
+          </div>
+        </label>
+      </div>
+      <p class="settings-group-hint">可上下滑动查看更多选项</p>
+    </div>
+
+    <!-- 禁忌食材 -->
+    <div class="settings-group">
+      <div class="settings-group-header">
+        <svg viewBox="0 0 20 20" width="18" height="18"><circle cx="10" cy="10" r="9" stroke="#C63B2F" stroke-width="1.5"/><line x1="6" y1="6" x2="14" y2="14" stroke="#C63B2F" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span class="settings-group-title">禁忌食材</span>
+      </div>
+      <p class="settings-group-desc">添加长辈不能吃的食材，推荐时会自动排除</p>
+      <div class="blocked-tags" id="blockedTags"></div>
+      <div class="blocked-input-row">
+        <input type="text" class="blocked-input" id="blockedInput" placeholder="输入食材名称，如：海鲜" maxlength="20">
+        <button class="blocked-add-btn" id="blockedAddBtn">添加</button>
+      </div>
+    </div>
+
+    <!-- 提醒设置 -->
+    <div class="settings-group">
+      <div class="settings-group-header">
+        <svg viewBox="0 0 20 20" width="18" height="18"><path d="M14 12V8C14 5.5 12 3.5 9.5 3.5C7 3.5 5 5.5 5 8V12L3 14H16L14 12Z" stroke="#FF5A00" stroke-width="1.5"/><circle cx="13" cy="16" r="2" fill="#FF5A00" opacity=".2" stroke="#FF5A00" stroke-width="1.5"/></svg>
+        <span class="settings-group-title">提醒设置</span>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <span class="toggle-label">超时未确认提醒</span>
+          <span class="toggle-desc">长辈超过设定时间未确认收餐时推送通知</span>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="notifyToggle" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="timeout-row" id="timeoutRow">
+        <span class="timeout-label">超时时间</span>
+        <div class="timeout-input-wrap">
+          <select class="timeout-select" id="timeoutSelect">
+            <option value="15">15 分钟</option>
+            <option value="30" selected>30 分钟</option>
+            <option value="45">45 分钟</option>
+            <option value="60">60 分钟</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 备注 -->
+    <div class="settings-group">
+      <div class="settings-group-header">
+        <svg viewBox="0 0 20 20" width="18" height="18"><rect x="3" y="3" width="14" height="14" rx="3" stroke="#FF5A00" stroke-width="1.5"/><line x1="7" y1="8" x2="13" y2="8" stroke="#FF5A00" stroke-width="1.2" stroke-linecap="round"/><line x1="7" y1="11" x2="13" y2="11" stroke="#FF5A00" stroke-width="1.2" stroke-linecap="round"/></svg>
+        <span class="settings-group-title">备注</span>
+      </div>
+      <textarea class="notes-input" id="notesInput" placeholder="如：多加米饭、少放味精、不要辣..." maxlength="200"></textarea>
+      <span class="notes-count" id="notesCount">0 / 200</span>
+    </div>
+
+    <!-- 保存按钮 -->
+    <div class="settings-save-area">
+      <button class="save-btn" id="saveSettingsBtn">保存规则</button>
+      <button class="reset-btn" id="resetSettingsBtn">恢复默认</button>
+    </div>
+  </section>
+
+  <!-- 规则确认弹窗 -->
+  <div class="rules-confirm-overlay" id="rulesConfirmOverlay" style="display:none;">
+    <div class="rules-confirm-box">
+      <div class="rules-confirm-icon">⚙️</div>
+      <p class="rules-confirm-title">确认保存规则</p>
+      <p class="rules-confirm-desc">请确认以下用餐规则：</p>
+      <div class="rules-preview" id="rulesConfirmPreview"></div>
+      <div class="rules-confirm-actions">
+        <button class="rules-btn rules-btn--back" id="rulesConfirmBack">返回修改</button>
+        <button class="rules-btn rules-btn--save" id="rulesConfirmSave">确认保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- PAGE B-06: 我的                                                  -->
+  <!-- ============================================================ -->
+  <section class="page" id="page-profile">
+    <header class="page-header">
+      <button class="back-btn" data-back="status">
+        <svg viewBox="0 0 24 24" width="24" height="24"><path d="M15 4L7 12L15 20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="page-title">我的</span>
+      <div class="header-spacer"></div>
+    </header>
+
+    <!-- 家属信息（点击进入个人信息编辑页） -->
+    <div class="elder-status-header elder-card" id="familyElderCard">
+      <div class="elder-avatar">
+        <svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="22" fill="#FFF0E3" stroke="#FF5A00" stroke-width="2"/><circle cx="24" cy="16" r="7" fill="#FF5A00" opacity=".3"/><path d="M10 38C10 31 16 28 24 28C32 28 38 31 38 38" stroke="#FF5A00" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <div class="elder-info">
+        <h2 class="elder-name" id="familyProfileName">女儿</h2>
+        <p class="elder-status-text" id="familyProfileInfo">关注长辈：张奶奶</p>
+      </div>
+      <svg class="profile-arrow" viewBox="0 0 16 16" width="16" height="16"><path d="M5 3L11 8L5 13" stroke="#B8A89E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+
+    <!-- 功能入口 -->
+    <div class="family-quick-actions">
+      <button class="family-quick-btn" id="profileMsgsBtn">
+        <div class="fq-icon fq-icon--analysis">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none"><path d="M4 4H20V16H8L4 20V4Z" stroke="#FF5A00" stroke-width="2" stroke-linejoin="round"/></svg>
+        </div>
+        <span class="fq-label">留言记录</span>
+        <span class="fq-desc">查看与长辈的留言</span>
+      </button>
+      <button class="family-quick-btn" id="profileOrdersBtn">
+        <div class="fq-icon fq-icon--settings">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" stroke="#FF5A00" stroke-width="2"/><line x1="8" y1="8" x2="16" y2="8" stroke="#FF5A00" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+        <span class="fq-label">订单记录</span>
+        <span class="fq-desc">查看长辈的订单</span>
+      </button>
+    </div>
+    <div class="family-quick-actions">
+      <button class="family-quick-btn" id="profileRulesBtn">
+        <div class="fq-icon fq-icon--analysis">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none"><rect x="3" y="3" width="18" height="18" rx="4" stroke="#FF5A00" stroke-width="2"/><line x1="8" y1="10" x2="16" y2="10" stroke="#FF5A00" stroke-width="2" stroke-linecap="round"/><line x1="8" y1="14" x2="13" y2="14" stroke="#FF5A00" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+        <span class="fq-label">已保存的饮食规则</span>
+        <span class="fq-desc">查看已保存的规则</span>
+      </button>
+      <button class="family-quick-btn" id="profileAnalysisBtn">
+        <div class="fq-icon fq-icon--settings">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none"><circle cx="12" cy="12" r="10" stroke="#FF5A00" stroke-width="2"/><path d="M12 6V12L16 14" stroke="#FF5A00" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+        <span class="fq-label">AI 分析</span>
+        <span class="fq-desc">查看推荐依据</span>
+      </button>
+    </div>
+
+    <nav class="bottom-nav">
+      <button class="nav-item" data-page="status">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M3 10L12 3L21 10V20C21 20.5 20.5 21 20 21H4C3.5 21 3 20.5 3 20V10Z" stroke="currentColor" stroke-width="2"/></svg>
+        <span class="nav-label">首页</span>
+      </button>
+      <button class="nav-item" data-page="orders">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" stroke="currentColor" stroke-width="2"/><line x1="8" y1="8" x2="16" y2="8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span class="nav-label">今日订单</span>
+      </button>
+      <button class="nav-item nav-item--active" data-page="profile">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/><path d="M4 20C4 16 7.5 14 12 14C16.5 14 20 16 20 20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span class="nav-label">我的</span>
+      </button>
+    </nav>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- PAGE B-07: 个人信息编辑                                          -->
+  <!-- ============================================================ -->
+  <section class="page" id="page-family-edit">
+    <header class="page-header">
+      <button class="back-btn" id="familyEditBack">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none"><path d="M15 4L7 12L15 20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="page-title">个人信息</span>
+      <div class="header-spacer"></div>
+    </header>
+
+    <div class="profile-form">
+      <div class="form-group">
+        <label class="form-label">姓名</label>
+        <input type="text" class="form-input" id="familyEditName" placeholder="请输入姓名" maxlength="20">
+      </div>
+      <div class="form-group">
+        <label class="form-label">年龄</label>
+        <input type="number" class="form-input" id="familyEditAge" placeholder="请输入年龄" min="18" max="120" inputmode="numeric">
+      </div>
+      <div class="form-group">
+        <label class="form-label">性别</label>
+        <select class="form-input" id="familyEditGender">
+          <option value="女">女</option>
+          <option value="男">男</option>
+          <option value="保密">保密</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">电话号码</label>
+        <input type="tel" class="form-input" id="familyEditPhone" placeholder="请输入电话号码" maxlength="11" inputmode="numeric">
+      </div>
+      <div class="form-group">
+        <label class="form-label">关注长辈</label>
+        <input type="text" class="form-input" id="familyEditElder" placeholder="请输入关注的长辈姓名" maxlength="20">
+      </div>
+      <div class="form-group">
+        <label class="form-label">关注长辈性别</label>
+        <select class="form-input" id="familyEditElderGender">
+          <option value="女">女</option>
+          <option value="男">男</option>
+          <option value="保密">保密</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="profile-save-area">
+      <button class="save-btn" id="familyEditSaveBtn">保存信息</button>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- PAGE B-08: 已保存的饮食规则                                       -->
+  <!-- ============================================================ -->
+  <section class="page" id="page-family-rules">
+    <header class="page-header">
+      <button class="back-btn" id="familyRulesBack">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none"><path d="M15 4L7 12L15 20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="page-title">已保存的饮食规则</span>
+      <div class="header-spacer"></div>
+    </header>
+
+    <div class="profile-rules-card">
+      <div class="prc-header">
+        <svg viewBox="0 0 20 20" width="18" height="18"><rect x="3" y="3" width="14" height="14" rx="3" stroke="#FF5A00" stroke-width="1.5"/><line x1="7" y1="8" x2="13" y2="8" stroke="#FF5A00" stroke-width="1.2" stroke-linecap="round"/><line x1="7" y1="11" x2="13" y2="11" stroke="#FF5A00" stroke-width="1.2" stroke-linecap="round"/></svg>
+        <span class="prc-title">长辈饮食规则</span>
+      </div>
+      <div class="prc-body" id="familyRulesBody">
+        <div class="prc-row"><span class="prc-label">单餐预算</span><span class="prc-value" id="frMaxPrice">--</span></div>
+        <div class="prc-row"><span class="prc-label">饮食偏好</span><span class="prc-value" id="frDietary">--</span></div>
+        <div class="prc-row"><span class="prc-label">禁忌食材</span><span class="prc-value" id="frBlocked">--</span></div>
+        <div class="prc-row"><span class="prc-label">超时提醒</span><span class="prc-value" id="frNotify">--</span></div>
+        <div class="prc-row"><span class="prc-label">备注</span><span class="prc-value" id="frNotes">--</span></div>
+      </div>
+      <button class="modify-btn" id="familyRulesModifyBtn">修改规则</button>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- PAGE B-09: 今日订单                                              -->
+  <!-- ============================================================ -->
+  <section class="page" id="page-family-orders">
+    <header class="page-header">
+      <button class="back-btn" id="familyOrdersBack">
+        <svg viewBox="0 0 24 24" width="24" height="24"><path d="M15 4L7 12L15 20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="page-title">今日订单</span>
+      <div class="header-spacer"></div>
+    </header>
+
+    <div class="today-orders-header" id="familyOrdersCount"></div>
+    <div class="today-orders-list" id="familyOrdersList"></div>
+
+    <!-- 空状态 -->
+    <div class="order-card-empty" id="familyOrdersEmpty" style="display:none;">
+      <div class="empty-icon">
+        <svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="#E9E1DB" stroke-width="2"/><line x1="16" y1="24" x2="32" y2="24" stroke="#E9E1DB" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <p class="empty-text">今日暂无订单</p>
+      <p class="empty-hint">长辈今天还没有下单</p>
+    </div>
+
+    <nav class="bottom-nav">
+      <button class="nav-item" data-page="status">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M3 10L12 3L21 10V20C21 20.5 20.5 21 20 21H4C3.5 21 3 20.5 3 20V10Z" stroke="currentColor" stroke-width="2"/></svg>
+        <span class="nav-label">首页</span>
+      </button>
+      <button class="nav-item nav-item--active" data-page="orders">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" stroke="currentColor" stroke-width="2"/><line x1="8" y1="8" x2="16" y2="8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span class="nav-label">今日订单</span>
+      </button>
+      <button class="nav-item" data-page="profile">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/><path d="M4 20C4 16 7.5 14 12 14C16.5 14 20 16 20 20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span class="nav-label">我的</span>
+      </button>
+    </nav>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- PAGE B-10: 订单记录（历史订单）                                     -->
+  <!-- ============================================================ -->
+  <section class="page" id="page-family-history">
+    <header class="page-header">
+      <button class="back-btn" id="familyHistoryBack">
+        <svg viewBox="0 0 24 24" width="24" height="24"><path d="M15 4L7 12L15 20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="page-title">订单记录</span>
+      <div class="header-spacer"></div>
+    </header>
+
+    <div class="today-orders-header" id="familyHistoryCount"></div>
+    <div class="today-orders-list" id="familyHistoryList"></div>
+
+    <!-- 空状态 -->
+    <div class="order-card-empty" id="familyHistoryEmpty" style="display:none;">
+      <div class="empty-icon">
+        <svg viewBox="0 0 48 48" fill="none"><rect x="8" y="8" width="32" height="32" rx="6" stroke="#E9E1DB" stroke-width="2"/><line x1="16" y1="20" x2="32" y2="20" stroke="#E9E1DB" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="26" x2="28" y2="26" stroke="#E9E1DB" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <p class="empty-text">暂无订单记录</p>
+      <p class="empty-hint">长辈还没有下单记录</p>
+    </div>
+  </section>
+
+</div>
+
+<script src="js/api.js?v=20260802u"></script>
+<script src="js/app.js?v=20260802ad"></script>
+</body>
+</html>
