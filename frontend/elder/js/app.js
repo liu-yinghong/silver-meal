@@ -653,7 +653,7 @@ init();
 // PAGE 03: 推荐结果
 // ================================================================
 (function(){
-var DOM={}, meals=[], reasons=[], currentMealIdx=0, querySummary='', isOrdering=false;
+var DOM={}, meals=[], reasons=[], currentMealIdx=0, querySummary='', aiMode='', isOrdering=false;
 var TAG_LABELS={
   low_oil:'低油',low_salt:'低盐',low_sugar:'低糖',soft_food:'软烂易消化',
   vegetarian:'素食',high_protein:'高蛋白',low_carb:'低碳水',gluten_free:'无麸质',
@@ -708,7 +708,7 @@ function loadData(){
         else reasons=d.reasons.map(function(s){return String(s||'').split('；').filter(Boolean);});
       }
       else reasons=d.meals.map(function(m){return genReasons(m);});
-      querySummary=d.query_summary||uq; return true;
+      querySummary=d.query_summary||uq; aiMode=d.ai_mode||''; return true;
     }
   }catch(e){console.warn('解析推荐数据失败');} }
   // 无推荐数据（后端断开等）：不退回硬编码假餐食，由 onEnter 提示并回首页
@@ -803,12 +803,14 @@ PageManager.pageHooks.recommend = {
       return;
     }
     DOM.queryText.textContent=querySummary||'为您找到以下推荐';
+    if(DOM.localModeHint) DOM.localModeHint.style.display=(aiMode==='local')?'flex':'none';
     renderMeal(0);
   }
 };
 
 function init(){
   DOM.queryText=document.getElementById('queryText'); DOM.mealTags=document.getElementById('mealTags');
+  DOM.localModeHint=document.getElementById('localModeHint');
   DOM.mealImage=document.getElementById('mealImage'); DOM.mealImageArea=document.getElementById('mealImageArea');
   DOM.mealName=document.getElementById('mealName'); DOM.mealDesc=document.getElementById('mealDesc');
   DOM.mealPrice=document.getElementById('mealPrice'); DOM.mealEta=document.getElementById('mealEta');

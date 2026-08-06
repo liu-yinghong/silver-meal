@@ -23,8 +23,10 @@ class ASRService:
     def transcribe(self, wav_bytes: bytes, sample_rate: int = SAMPLE_RATE) -> str | None:
         """将 16kHz 单声道 PCM WAV 音频转文字。失败返回 None。"""
         if not wav_bytes:
+            print('[ASR] wav_bytes 为空')
             return None
         if not self._api_key:
+            print('[ASR] 未配置 OPENAI_API_KEY')
             return None
         try:
             import dashscope
@@ -39,10 +41,18 @@ class ASRService:
                 callback=None,
             )
             result = recognition.call(str(tmp_path))
-            if result is None or getattr(result, 'status_code', None) != 200:
+            status = getattr(result, 'status_code', None)
+            if status != 200:
+                print(f'[ASR] dashscope 返回异常: status={status} '
+                      f'message={getattr(result, "message", "")!r} code={getattr(result, "code", "")!r} '
+                      f'wav_bytes={len(wav_bytes)}')
                 return None
-            return self._extract_text(result)
-        except Exception:
+            text = self._extract_text(result)
+            if not text:
+                print(f'[ASR] dashscope status=200 但未识别出文字（可能录音过短/无语音） wav_bytes={len(wav_bytes)}')
+            return text
+        except Exception as e:
+            print(f'[ASR] 调用异常: {type(e).__name__}: {e}')
             return None
 
     def _write_temp_wav(self, wav_bytes: bytes) -> Path:
