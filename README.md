@@ -118,6 +118,7 @@ silver-meal/
 | `/api/messages/{elder_id}/unread` | GET | 获取未读留言 |
 | `/api/messages/{id}/read` | POST | 标记留言已读 |
 | `/api/demo/reset` | POST | 一键重置演示（清空订单/规则/留言） |
+| `/api/status` | GET | 环境诊断：返回大模型/语音 Key 是否已配置（排查"没走大模型"用） |
 
 启动后访问 [http://localhost:8000/docs](http://localhost:8000/docs) 查看完整 Swagger 文档。
 
@@ -158,6 +159,23 @@ silver-meal/
 3. 启动服务器并保持窗口打开（端口被占用时会提示并打开页面）
 
 > 若提示找不到 Python，请先安装 Python 3.10+（https://www.python.org/downloads/ ，安装时勾选 **Add Python to PATH**）。
+
+### 环境要求与常见问题（新机器/客户）
+
+**环境要求**
+- Python **3.10 及以上**（推荐 3.10–3.13，从 python.org 安装，务必勾选 **Add Python to PATH**）
+- 首次运行会自动安装依赖（`pip install -r requirements.txt`），需联网
+
+**常见问题**
+
+| 现象 | 原因与解决 |
+|------|-----------|
+| 提示 `Python was not found` / `python 无法运行` | Windows"应用执行别名"把 `python` 指到了 Microsoft Store 占位符。设置 → 应用 → 高级应用设置 → 应用执行别名，关闭 `python.exe` / `python3.exe`；或在命令行用 `py -3` 代替 `python` |
+| 自动安装依赖失败 | 手动执行 `python -m pip install -r requirements.txt`（网络慢可加国内镜像 `-i https://pypi.tuna.tsinghua.edu.cn/simple`） |
+| 双击 `_start.bat` 一闪而过/直接关闭 | 在命令行（cmd）里运行 `_start.bat` 查看错误输出，按上方常见问题处理 |
+| 后端启动了但浏览器打不开页面 | 确认后端窗口出现 `Uvicorn running on http://0.0.0.0:8000`；端口 8000 被占用时先关闭占用程序 |
+| 文字推荐结果"不相干" / 语音识别接口返回 422 | 说明后端**没读到 `OPENAI_API_KEY`**（大模型未启用，退回本地解析）。访问 `http://localhost:8000/api/status` 看 `llm.configured` 是否为 `true`；需在设置环境变量后**重启后端**才能生效 |
+| 手动启动报错找不到 `data/meals.json` | 必须在**项目根目录**下启动，不要在子目录里执行 `uvicorn` |
 
 ### 手动启动
 

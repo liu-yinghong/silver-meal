@@ -195,6 +195,7 @@ def test_weather_endpoint_fallback(client, monkeypatch):
 
 def test_asr_endpoint_success(client, monkeypatch):
     from app.core.asr_service import ASRService
+    monkeypatch.setenv('OPENAI_API_KEY', 'sk-test')  # 确保走 ASR 调用路径
     monkeypatch.setattr(ASRService, 'transcribe', lambda self, wav, sample_rate=16000: '想吃清淡的')
     r = client.post('/api/asr', files={'file': ('audio.wav', b'fake-wav-bytes', 'audio/wav')})
     assert r.status_code == 200
@@ -203,10 +204,33 @@ def test_asr_endpoint_success(client, monkeypatch):
 
 def test_asr_endpoint_failed(client, monkeypatch):
     from app.core.asr_service import ASRService
+    monkeypatch.setenv('OPENAI_API_KEY', 'sk-test')
     monkeypatch.setattr(ASRService, 'transcribe', lambda self, wav, sample_rate=16000: None)
     r = client.post('/api/asr', files={'file': ('audio.wav', b'fake-wav-bytes', 'audio/wav')})
     assert r.status_code == 422
     assert r.headers.get('X-Error-Code') == 'ASR_FAILED'
+
+
+def test_asr_no_key_reports_clear_error(client, monkeypatch):
+    """未配置 OPENAI_API_KEY 时，ASR 返回明确的可排查错误码。"""
+    from app.core.asr_service import ASRService
+    monkeypatch.delenv('OPENAI_API_KEY', raising=False)
+    monkeypatch.setattr(ASRService, 'transcribe', lambda self, wav, sample_rate=16000: '想吃清淡的')
+    r = client.post('/api/asr', files={'file': ('audio.wav', b'fake-wav-bytes', 'audio/wav')})
+    assert r.status_code == 422
+    assert r.headers.get('X-Error-Code') == 'ASR_NO_KEY'
+    assert 'OPENAI_API_KEY' in r.json()['detail']
+
+
+def test_api_status_reports_key(client, monkeypatch):
+    """/api/status 反映后端是否已读取 OPENAI_API_KEY。"""
+    monkeypatch.setenv('OPENAI_API_KEY', 'sk-test')
+    r = client.get('/api/status')
+    assert r.status_code == 200
+    body = r.json()
+    assert body['status'] == 'ok'
+    assert body['llm']['configured'] is True
+    assert body['asr']['configured'] is True
 
 
 def test_today_service_three_dimensions(monkeypatch):

@@ -257,10 +257,31 @@ async def transcribe_audio(file: UploadFile):
     """语音转文字（DashScope Paraformer）。上传 16kHz 单声道 WAV。"""
     content = await file.read()
     asr = ASRService()
+    if not asr._api_key:
+        raise _http_error(422, 'ASR_NO_KEY',
+                          '未配置 OPENAI_API_KEY，无法使用语音识别。请先设置环境变量并重启后端后重试')
     text = asr.transcribe(content)
     if not text:
         raise _http_error(422, 'ASR_FAILED', '语音识别失败，请重试或直接输入文字')
     return {'text': text}
+
+
+# ---- 环境诊断 ----
+@router.get('/api/status')
+def api_status():
+    """环境诊断：报告大模型/语音的 OPENAI_API_KEY 是否已被后端读取。
+    客户/联调时访问 GET /api/status 即可快速定位"为什么没走大模型"。
+    """
+    llm = LLMService()
+    return {
+        'status': 'ok',
+        'llm': {
+            'configured': bool(llm._api_key),
+            'mode': 'remote' if (llm._use_remote and llm._api_key) else 'local',
+        },
+        'asr': {'configured': bool(ASRService()._api_key)},
+        'hint': 'configured=true 表示后端已读到 OPENAI_API_KEY，可正常使用大模型与语音识别',
+    }
 
 
 # ---- Demo 控制 ----
