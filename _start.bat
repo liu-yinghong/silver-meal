@@ -3,10 +3,16 @@ set "BASE=%~dp0"
 set "BASE=%BASE:~0,-1%"
 cd /d "%BASE%" 2>nul
 
+REM ---- detect LAN IP so you can open the page on your phone (same Wi-Fi) ----
+set "LANIP="
+for /f %%i in ('powershell -NoProfile -Command "(Get-NetIPConfiguration | Where-Object {$_.IPv4DefaultGateway -ne $null} | Select-Object -First 1).IPv4Address.IPAddress"') do set "LANIP=%%i"
+
 echo ============================================
 echo   Fan Xin - Silver Meal (Demo)
 echo   Elder page : http://localhost:8000/elder/
 echo   Family page: http://localhost:8000/family/
+if defined LANIP echo   Phone access: http://%LANIP%:8000/elder/
+if not defined LANIP echo   Phone access: use your PC IP :8000/elder/ from the same Wi-Fi
 echo ============================================
 echo.
 
@@ -14,6 +20,7 @@ REM ---- if port 8000 is already in use, inform the user ----
 netstat -ano | findstr ":8000 " | findstr "LISTENING" >nul 2>nul
 if %errorlevel%==0 goto :already_running
 
+:find_python
 REM ---- find a python interpreter ----
 set "PY="
 where python >nul 2>nul
@@ -63,11 +70,26 @@ exit /b 0
 :already_running
 echo.
 echo [INFO] Port 8000 is already in use.
-echo The server may already be running.
+echo It may be the app already running, or a leftover process.
+echo.
+set /p RESTART=Type R to stop it and start fresh, or press Enter to open the page directly:
+if /i "%RESTART%"=="R" goto :kill_and_start
+echo Opening http://localhost:8000/elder/ ...
 start "" "http://localhost:8000/elder/"
+if defined LANIP echo Phone: open http://%LANIP%:8000/elder/ in your phone browser
 echo.
 pause
 exit /b 0
+
+:kill_and_start
+echo Stopping the process(es) holding port 8000...
+for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":8000 " ^| findstr "LISTENING"') do (
+  echo   Stopping PID %%a...
+  taskkill /F /PID %%a >nul 2>nul
+)
+echo Port 8000 released.
+echo.
+goto :find_python
 
 :no_python
 echo.

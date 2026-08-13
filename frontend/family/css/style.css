@@ -20,15 +20,15 @@
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{font-size:16px;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
-body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:#F5F0EB;color:var(--color-text-primary);line-height:var(--leading-normal);-webkit-font-smoothing:antialiased;overflow-x:hidden;min-height:100dvh}
-.app-container{width:100%;max-width:430px;min-height:100dvh;margin:0 auto;background:var(--color-canvas);position:relative;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:#F5F0EB;color:var(--color-text-primary);line-height:var(--leading-normal);-webkit-font-smoothing:antialiased;overflow-x:hidden;min-height:100vh;min-height:100dvh}
+.app-container{width:100%;max-width:430px;min-height:100vh;min-height:100dvh;margin:0 auto;background:var(--color-canvas);position:relative;overflow:hidden}
 button:focus-visible,input:focus-visible{outline:2px solid var(--color-primary);outline-offset:2px}
-@media(min-width:768px){body{display:flex;align-items:center;justify-content:center;padding:24px}.app-container{border-radius:32px;box-shadow:0 20px 60px rgba(0,0,0,.15);min-height:min(100dvh - 48px,932px)}}
+@media(min-width:768px){body{display:flex;align-items:center;justify-content:center;padding:24px}.app-container{border-radius:32px;box-shadow:0 20px 60px rgba(0,0,0,.15);min-height:min(100vh - 48px,932px);min-height:min(100dvh - 48px,932px)}.app-container .page--active{min-height:min(100vh - 48px,932px);min-height:min(100dvh - 48px,932px)}}
 
 /* 页面切换 — 所有页面统一尺寸 */
 .page{display:none;animation:pageIn .3s ease-out}
-.page--active{display:flex;flex-direction:column;min-height:100dvh}
-@keyframes pageIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.page--active{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh}
+@keyframes pageIn{from{opacity:0}to{opacity:1}}
 
 /* Toast */
 .toast{position:fixed;top:80px;left:50%;transform:translateX(-50%);z-index:300;background:var(--color-text-primary);color:white;font-size:var(--text-body);font-weight:var(--weight-medium);padding:var(--space-md) var(--space-xl);border-radius:var(--radius-full);box-shadow:0 4px 16px rgba(0,0,0,.2);pointer-events:none;opacity:0;transition:opacity var(--duration-normal);white-space:nowrap}
@@ -144,7 +144,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--color-primary);
 /* ============================================================
    PAGE B-04: 家属留言
    ============================================================ */
-.message-thread{flex:1;padding:var(--space-lg) var(--space-xl) 80px;min-height:calc(100dvh - 180px);overflow-y:auto}
+.message-thread{flex:1;padding:var(--space-lg) var(--space-xl) 80px;min-height:calc(100vh - 180px);min-height:calc(100dvh - 180px);overflow-y:auto}
 .msg-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:var(--space-5xl) 0}.msg-empty-icon{margin-bottom:var(--space-lg)}.msg-empty-text{font-size:var(--text-body);font-weight:var(--weight-semibold);color:var(--color-text-secondary)}.msg-empty-hint{font-size:var(--text-caption);color:var(--color-text-placeholder);margin-top:4px}
 
 /* 消息气泡 */

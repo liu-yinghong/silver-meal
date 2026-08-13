@@ -10,3 +10,4 @@ scripts/
 tmp/
 .agents/
 .claude/
+.pytest_cache/

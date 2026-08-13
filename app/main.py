@@ -8,7 +8,7 @@ from app.adapters.web_api import router
 app = FastAPI(
     title='饭心·银龄放心单 Silver Meal API',
     description='适老点餐 Demo 服务 - 帮助恢复期独居老人安全、低负担地完成一顿饭',
-    version='1.2.0',
+    version='1.2.1',
 )
 
 # 允许跨域请求，前后端分离后前端可跨域访问
@@ -33,7 +33,7 @@ if frontend_dir.exists():
 def root():
     return {
         'project': '饭心·银龄放心单',
-        'version': '1.2.0',
+        'version': '1.2.1',
         'docs': '/docs',
         'elder_page': '/elder/',
         'family_page': '/family/',
